@@ -4,12 +4,105 @@ Scripts pour automatiser la suppression complète des vaults AWS Glacier et de l
 
 ## 📁 Fichiers du projet
 
+### Scripts principaux
 - **glacier.json** : Liste des vaults Glacier à traiter (6 vaults)
 - **init_glacier_inventory.sh** : Lance les jobs d'inventaire pour tous les vaults
 - **check_glacier_jobs.sh** : Vérifie l'état d'avancement des jobs
 - **delete_glacier_auto.sh** : Supprime les archives et les vaults
 
+### 🎨 Dashboard web (NOUVEAU)
+- **dashboard_server.py** : Serveur web avec API REST
+- **dashboard.html** : Interface graphique interactive
+- **start_dashboard.sh** : Script de lancement du dashboard
+
+## 🌐 Dashboard Web Interactif ⭐ NOUVEAU
+
+**Interface graphique moderne pour gérer vos vaults Glacier depuis votre navigateur !**
+
+### Fonctionnalités du dashboard
+
+✨ **Monitoring en temps réel**
+- Visualisation de tous les vaults et leurs statistiques
+- Suivi de l'état des jobs d'inventaire
+- Barres de progression pour les suppressions en cours
+- Logs en direct avec coloration syntaxique
+
+🎮 **Contrôle interactif**
+- Lancer les scripts directement depuis l'interface
+- Boutons pour toutes les opérations (init, check, delete, etc.)
+- Confirmations de sécurité pour les opérations critiques
+- Suivi des processus en cours d'exécution
+
+📊 **Statistiques détaillées**
+- Nombre d'archives par vault
+- Taille totale des données
+- Progression en pourcentage avec compteurs
+- Historique des logs
+
+### Lancement du dashboard
+
+```bash
+# Lancer le serveur web
+./start_dashboard.sh
+```
+
+Puis ouvrez votre navigateur à l'adresse : **http://localhost:8080**
+
+**Sortie attendue :**
+```
+============================================================
+🚀 Dashboard AWS Glacier
+============================================================
+Serveur démarré sur : http://localhost:8080
+Répertoire de travail : /Users/remi/Desktop/Glacier
+
+Ouvrez votre navigateur à l'adresse : http://localhost:8080
+
+Appuyez sur Ctrl+C pour arrêter le serveur
+============================================================
+```
+
+### Captures d'écran du dashboard
+
+**Vue d'ensemble :**
+- 📦 **Section Vaults** : Liste de tous les vaults avec statistiques
+- ⏳ **Section Jobs** : État des jobs d'inventaire avec badges de statut
+- 🔥 **Section Progression** : Barres de progression animées pour les suppressions
+- 📋 **Section Logs** : Console avec logs en temps réel
+- ⚙️ **Section Contrôles** : Boutons pour lancer les scripts
+
+**Auto-refresh :**
+Le dashboard se rafraîchit automatiquement toutes les 5 secondes pour afficher l'état le plus récent.
+
+### Utilisation du dashboard
+
+1. **Lancer le serveur**
+   ```bash
+   ./start_dashboard.sh
+   ```
+
+2. **Ouvrir le navigateur** à http://localhost:8080
+
+3. **Utiliser les contrôles**
+   - Cliquer sur "🚀 Lancer les jobs d'inventaire" pour démarrer
+   - Surveiller l'état dans la section "Jobs"
+   - Une fois prêt, lancer la suppression
+   - Suivre la progression en temps réel
+
+4. **Arrêter le serveur**
+   - Revenir au terminal
+   - Appuyer sur `Ctrl+C`
+
 ## 🚀 Workflow complet
+
+### Option A : Avec le Dashboard Web (Recommandé)
+
+1. Lancer le dashboard : `./start_dashboard.sh`
+2. Ouvrir http://localhost:8080 dans votre navigateur
+3. Utiliser les boutons pour contrôler les opérations
+4. Surveiller la progression en temps réel
+
+### Option B : En ligne de commande
 
 ### Étape 1 : Lancer les jobs d'inventaire
 
@@ -215,10 +308,30 @@ Pendant l'exécution, les fichiers suivants seront créés :
 
 ## 🔧 Prérequis
 
+### Pour les scripts CLI
 - AWS CLI installé et configuré
 - `jq` installé (pour le parsing JSON)
 - Bash 4.0+
 - Credentials AWS configurées (`~/.aws/credentials` ou variables d'environnement)
+
+### Pour le dashboard web (optionnel)
+- Python 3.6+ (généralement pré-installé sur macOS)
+- Navigateur web moderne (Chrome, Firefox, Safari, Edge)
+
+**Vérifier les prérequis :**
+```bash
+# Vérifier AWS CLI
+aws --version
+
+# Vérifier jq
+jq --version
+
+# Vérifier Python 3
+python3 --version
+
+# Vérifier les credentials AWS
+aws sts get-caller-identity
+```
 
 ## 🚀 Fonctionnalités avancées
 
