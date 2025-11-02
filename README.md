@@ -185,14 +185,20 @@ Pendant l'exécution, les fichiers suivants seront créés :
 
 ```
 .
-├── glacier.json                    # Configuration des vaults
-├── init_glacier_inventory.sh       # Script 1
-├── check_glacier_jobs.sh           # Script 2
-├── delete_glacier_auto.sh          # Script 3
-├── job_my_vault_*.json          # Job IDs (créés par script 1)
-└── glacier_inventory/              # Inventaires téléchargés
-    └── inventory_my_vault_*.json
+├── glacier.json                             # Configuration des vaults
+├── init_glacier_inventory.sh                # Script 1
+├── check_glacier_jobs.sh                    # Script 2
+├── delete_glacier_auto.sh                   # Script 3
+├── job_my_vault_*.json                   # Job IDs (créés par script 1)
+├── glacier_inventory/                       # Inventaires et progression
+│   ├── inventory_my_vault_*.json         # Inventaires téléchargés (originaux)
+│   ├── inventory_my_vault_*.working.json # Copies de travail (reprise)
+│   └── .progress_my_vault_*              # Fichiers de progression
+└── glacier_logs/                            # Logs persistants
+    └── deletion_YYYYMMDD_HHMMSS.log         # Log horodaté de chaque exécution
 ```
+
+**Note :** Les fichiers `.working.json` et `.progress_*` sont automatiquement nettoyés une fois le vault vidé.
 
 ## ⚠️ Avertissements
 
@@ -216,35 +222,99 @@ Pendant l'exécution, les fichiers suivants seront créés :
 
 ## 🚀 Fonctionnalités avancées
 
-### Vérification automatique des jobs
+### 🔄 Reprise après interruption ⭐ NOUVEAU
+
+**Le script peut être interrompu et repris sans perdre de progression !**
+
+Fonctionnement :
+- Chaque archive supprimée est **immédiatement retirée** du fichier JSON de travail
+- En cas d'interruption (Ctrl+C, crash, perte de connexion), l'état est sauvegardé
+- Au redémarrage, le script **reprend exactement là où il s'est arrêté**
+- Seules les archives restantes sont traitées
+
+**Exemple :**
+```bash
+# Lancement initial
+./delete_glacier_auto.sh
+
+# Script interrompu après 10,000/10,000 archives
+# [Ctrl+C ou crash]
+
+# Reprise - seules les 8,766 archives restantes seront traitées
+./delete_glacier_auto.sh
+🔄 Reprise détectée : utilisation de l'inventaire de travail existant
+🔄 Reprise : 10000/10000 archives déjà supprimées
+🧨 8766 archives trouvées dans le vault
+```
+
+**Fichiers de reprise :**
+- `glacier_inventory/inventory_<vault>.working.json` : inventaire mis à jour en temps réel
+- `glacier_inventory/.progress_<vault>` : compteur de progression
+
+Ces fichiers sont automatiquement nettoyés une fois le vault complètement vidé.
+
+### 📋 Logs persistants ⭐ NOUVEAU
+
+**Traçabilité complète de toutes les opérations**
+
+Le script génère un fichier de log horodaté pour chaque exécution :
+- Format : `glacier_logs/deletion_YYYYMMDD_HHMMSS.log`
+- Tous les événements sont loggés : démarrages, suppressions, erreurs, fins
+- Format structuré : `[timestamp] [level] message`
+- Niveaux : INFO, WARN, ERROR
+
+**Exemple de log :**
+```
+[2025-11-02 14:30:15] [INFO] === Démarrage du script de suppression Glacier ===
+[2025-11-02 14:30:15] [INFO] Fichier de log : ./glacier_logs/deletion_20251102_143015.log
+[2025-11-02 14:30:16] [INFO] Traitement du vault : my_vault_2
+[2025-11-02 14:30:20] [INFO] 10000 archives restantes dans le vault my_vault_2
+[2025-11-02 14:30:25] [INFO] Progression: 100/10000 archives traitées
+[2025-11-02 15:45:30] [WARN] Script interrompu par l'utilisateur (Ctrl+C)
+[2025-11-02 15:45:30] [INFO] La progression a été sauvegardée. Relancez le script pour reprendre.
+```
+
+**Gestion de Ctrl+C :**
+Le script intercepte proprement les interruptions et sauvegarde l'état avant de quitter.
+
+### ✅ Vérification automatique des jobs
 
 Le script `delete_glacier_auto.sh` vérifie automatiquement que les jobs d'inventaire sont terminés avant de télécharger les données. Si un job n'est pas prêt, il passe au suivant.
 
-### Système de retry
+### 🔁 Système de retry
 
 En cas d'erreur de suppression (throttling AWS, erreurs réseau), le script réessaie automatiquement jusqu'à 3 fois avec une pause de 2 secondes entre chaque tentative.
 
-### Protection contre le rate limiting
+### 🛡️ Protection contre le rate limiting
 
 Le script ajoute une pause de 0.5 seconde entre chaque suppression d'archive pour éviter d'être throttled par AWS. Ce délai est particulièrement important pour le vault avec 10,000 archives.
 
-### Progression en temps réel
+### 📊 Progression en temps réel avec ETA
 
-Pour les vaults contenant de nombreuses archives, le script affiche la progression tous les 100 archives :
+Pour les vaults contenant de nombreuses archives, le script affiche la progression tous les 100 archives avec estimation du temps restant :
 ```
-Progression: 100/10000 archives traitées...
-Progression: 200/10000 archives traitées...
+Progression: 100/10000 archives (1.85/s, ETA: 89min)...
+Progression: 200/10000 archives (1.92/s, ETA: 85min)...
 ```
 
-### Statistiques détaillées
+### 📈 Statistiques détaillées
 
 À la fin de l'exécution, le script affiche :
 - Nombre total de vaults traités
 - Nombre de vaults supprimés avec succès
 - Nombre d'échecs
 - Pour chaque vault : nombre d'archives réussies vs échouées
+- Chemin vers le fichier de log complet
 
-### Validation JSON
+### 🧹 Nettoyage automatique
+
+Une fois un vault complètement supprimé, tous les fichiers temporaires sont automatiquement nettoyés :
+- `job_<vault>.json`
+- `inventory_<vault>.json`
+- `inventory_<vault>.working.json`
+- `.progress_<vault>`
+
+### ✔️ Validation JSON
 
 Le script valide la structure JSON des inventaires avant de les traiter, évitant ainsi les erreurs silencieuses.
 
@@ -254,4 +324,40 @@ Le script valide la structure JSON des inventaires avant de les traiter, évitan
 - Un vault ne peut être supprimé que 24h après la dernière opération d'écriture
 - Les inventaires Glacier sont mis à jour toutes les 24h environ
 - La suppression de ~355k archives peut prendre plusieurs heures (environ 1-2h avec les pauses anti-throttling)
+- **Le script peut être interrompu à tout moment** : la progression est sauvegardée automatiquement
+- Les logs sont conservés dans `./glacier_logs/` pour audit et debugging
 - Les inventaires téléchargés sont conservés dans `./glacier_inventory/` et réutilisés lors de l'exécution de `--vaults-only`
+
+## 🆘 Scénarios courants
+
+### Le script plante ou je dois l'interrompre
+
+**Pas de panique !** Relancez simplement le script :
+```bash
+./delete_glacier_auto.sh
+```
+Il reprendra automatiquement là où il s'est arrêté.
+
+### Je veux voir ce qui s'est passé lors de l'exécution précédente
+
+Consultez le dernier fichier de log :
+```bash
+ls -lt glacier_logs/
+cat glacier_logs/deletion_*.log
+```
+
+### Le script est trop lent
+
+Vous pouvez ajuster les paramètres dans le script :
+- `DELAY_BETWEEN_DELETES=0.5` → réduire à `0.2` (attention au throttling AWS)
+- `MAX_RETRIES=3` → réduire à `1` pour aller plus vite
+
+### Je veux nettoyer manuellement après des tests
+
+```bash
+# Nettoyer les inventaires de travail
+rm -f glacier_inventory/*.working.json glacier_inventory/.progress_*
+
+# Nettoyer tous les logs
+rm -rf glacier_logs/
+```
