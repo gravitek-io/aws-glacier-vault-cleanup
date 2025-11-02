@@ -5,6 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard AWS Glacier</title>
     <style>
+        :root {
+            --gravitek-green: #10b981;
+            --gravitek-green-dark: #059669;
+            --gravitek-green-light: #d1fae5;
+            --gravitek-green-bg: #ecfdf5;
+            --gravitek-purple: #8b5cf6;
+            --gravitek-gray-50: #fafafa;
+            --gravitek-gray-100: #f5f5f5;
+            --gravitek-gray-200: #e5e5e5;
+            --gravitek-gray-300: #d4d4d4;
+            --gravitek-gray-400: #a3a3a3;
+            --gravitek-gray-500: #737373;
+            --gravitek-gray-600: #525252;
+            --gravitek-gray-700: #404040;
+            --gravitek-gray-800: #262626;
+            --gravitek-gray-900: #171717;
+            --foreground-rgb: 10, 10, 10;
+            --background-rgb: 250, 250, 250;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -12,11 +32,13 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(to bottom, var(--gravitek-green-bg) 0%, rgb(var(--background-rgb)) 100%);
             min-height: 100vh;
-            padding: 20px;
-            color: #333;
+            color: rgb(var(--foreground-rgb));
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            transition: background-color 0.2s, color 0.2s;
         }
 
         .container {
@@ -25,150 +47,303 @@
         }
 
         header {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(135deg, var(--gravitek-green) 0%, var(--gravitek-green-dark) 100%);
+            padding: 48px;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.15);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 40%;
+            height: 100%;
+            background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.05));
+            pointer-events: none;
         }
 
         h1 {
-            color: #667eea;
-            font-size: 2.5em;
+            font-size: 2.2em;
+            font-weight: 700;
             margin-bottom: 10px;
+            letter-spacing: -0.8px;
+            position: relative;
+            z-index: 1;
         }
 
         .subtitle {
-            color: #666;
-            font-size: 1.1em;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.05em;
+            font-weight: 400;
+            position: relative;
+            z-index: 1;
         }
 
         .timestamp {
             float: right;
-            color: #999;
-            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.85em;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 6px 14px;
+            border-radius: 6px;
+            backdrop-filter: blur(10px);
+        }
+
+        .content-wrapper {
+            padding: 0 32px 40px;
         }
 
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
+            gap: 28px;
+            margin-bottom: 28px;
+            margin-top: 32px;
         }
 
         .card {
             background: white;
             border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s, box-shadow 0.2s;
+            padding: 32px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--gravitek-gray-200);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.08), 0 4px 10px rgba(0, 0, 0, 0.05);
+            border-color: var(--gravitek-green-light);
+            transform: translateY(-2px);
         }
 
         .card-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #f0f0f0;
+            margin-bottom: 28px;
+            padding-bottom: 18px;
+            border-bottom: 2px solid var(--gravitek-gray-100);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .card-header:hover {
+            opacity: 0.8;
         }
 
         .card-title {
-            font-size: 1.3em;
-            font-weight: 600;
-            color: #333;
+            font-size: 1.15em;
+            font-weight: 700;
+            color: var(--gravitek-gray-900);
+            letter-spacing: -0.4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .badge {
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85em;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .badge.success { background: #d4edda; color: #155724; }
-        .badge.warning { background: #fff3cd; color: #856404; }
-        .badge.danger { background: #f8d7da; color: #721c24; }
-        .badge.info { background: #d1ecf1; color: #0c5460; }
-
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin: 5px;
+        .collapse-icon {
+            font-size: 0.8em;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: inline-block;
         }
 
-        .btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        .collapse-icon.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .card-content {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .card-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+            margin-bottom: -28px;
+        }
+
+        .badge {
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.75em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            transition: all 0.2s;
+        }
+
+        .badge.success {
+            background: var(--gravitek-green-light);
+            color: var(--gravitek-green-dark);
+            border: 1px solid var(--gravitek-green);
+        }
+        .badge.warning {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #f59e0b;
+        }
+        .badge.danger {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        .badge.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #3b82f6;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            margin: 4px;
+            display: inline-block;
+            letter-spacing: 0.2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover:not(:disabled)::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn:active:not(:disabled) {
+            transform: translateY(0);
         }
 
         .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-            transform: none;
         }
 
-        .btn-primary { background: #667eea; color: white; }
-        .btn-success { background: #28a745; color: white; }
-        .btn-warning { background: #ffc107; color: #333; }
-        .btn-danger { background: #dc3545; color: white; }
-        .btn-secondary { background: #6c757d; color: white; }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gravitek-green) 0%, var(--gravitek-green-dark) 100%);
+            color: white;
+        }
+        .btn-primary:hover:not(:disabled) {
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            color: white;
+        }
+        .btn-success:hover:not(:disabled) {
+            box-shadow: 0 8px 20px rgba(34, 197, 94, 0.3);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #78350f;
+        }
+        .btn-warning:hover:not(:disabled) {
+            box-shadow: 0 8px 20px rgba(251, 191, 36, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+        .btn-danger:hover:not(:disabled) {
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--gravitek-gray-500) 0%, var(--gravitek-gray-600) 100%);
+            color: white;
+        }
+        .btn-secondary:hover:not(:disabled) {
+            box-shadow: 0 8px 20px rgba(115, 115, 115, 0.3);
+        }
 
         .progress-bar {
             width: 100%;
-            height: 30px;
-            background: #f0f0f0;
-            border-radius: 15px;
+            height: 36px;
+            background: var(--gravitek-gray-100);
+            border-radius: 8px;
             overflow: hidden;
-            margin: 10px 0;
+            margin: 14px 0;
             position: relative;
+            border: 1px solid var(--gravitek-gray-200);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
         }
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            transition: width 0.5s ease;
+            background: linear-gradient(90deg, var(--gravitek-green) 0%, var(--gravitek-green-dark) 100%);
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-weight: 600;
-            font-size: 0.9em;
+            font-weight: 700;
+            font-size: 0.85em;
+            letter-spacing: 0.4px;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
         }
 
         .vault-item {
-            padding: 15px;
-            margin: 10px 0;
-            background: #f8f9fa;
+            padding: 20px;
+            margin: 14px 0;
+            background: linear-gradient(135deg, var(--gravitek-gray-50) 0%, white 100%);
             border-radius: 8px;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid var(--gravitek-green);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .vault-item:hover {
+            background: linear-gradient(135deg, var(--gravitek-green-bg) 0%, white 100%);
+            border-left-color: var(--gravitek-green-dark);
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
         }
 
         .vault-name {
-            font-weight: 600;
-            font-size: 1.1em;
-            color: #333;
-            margin-bottom: 5px;
+            font-weight: 700;
+            font-size: 1.05em;
+            color: var(--gravitek-gray-900);
+            margin-bottom: 10px;
+            letter-spacing: -0.3px;
         }
 
         .vault-stats {
             display: flex;
-            gap: 20px;
-            font-size: 0.9em;
-            color: #666;
-            margin-top: 8px;
+            gap: 28px;
+            font-size: 0.85em;
+            color: var(--gravitek-gray-600);
+            margin-top: 12px;
+            flex-wrap: wrap;
         }
 
         .stat {
@@ -177,52 +352,59 @@
         }
 
         .stat-label {
-            font-size: 0.8em;
-            color: #999;
+            font-size: 0.72em;
+            color: var(--gravitek-gray-500);
             text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 5px;
+            font-weight: 600;
         }
 
         .stat-value {
-            font-weight: 600;
-            color: #333;
+            font-weight: 700;
+            color: var(--gravitek-gray-900);
+            font-size: 1.15em;
         }
 
         .log-container {
-            background: #1e1e1e;
-            color: #d4d4d4;
-            padding: 20px;
-            border-radius: 8px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.85em;
+            background: linear-gradient(135deg, #1e1e1e 0%, #171717 100%);
+            color: #e5e5e5;
+            padding: 24px;
+            border-radius: 10px;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.8em;
             max-height: 400px;
             overflow-y: auto;
-            line-height: 1.6;
+            line-height: 1.8;
+            border: 1px solid var(--gravitek-gray-800);
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
         .log-line {
-            padding: 2px 0;
+            padding: 4px 0;
         }
 
-        .log-line.INFO { color: #4ec9b0; }
-        .log-line.WARN { color: #ffd700; }
-        .log-line.ERROR { color: #f14c4c; }
+        .log-line.INFO { color: var(--gravitek-green); }
+        .log-line.WARN { color: #fbbf24; }
+        .log-line.ERROR { color: #f87171; }
 
         .controls {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
+            gap: 6px;
+            margin-top: 10px;
+            justify-content: center;
         }
 
         .spinner {
             display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
             border-top-color: white;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-left: 10px;
+            animation: spin 0.8s linear infinite;
+            margin-left: 8px;
         }
 
         @keyframes spin {
@@ -231,130 +413,267 @@
 
         .empty-state {
             text-align: center;
-            padding: 40px;
-            color: #999;
+            padding: 60px 24px;
+            color: var(--gravitek-gray-400);
         }
 
         .empty-state-icon {
             font-size: 3em;
-            margin-bottom: 10px;
+            margin-bottom: 16px;
+            opacity: 0.4;
+            filter: grayscale(100%);
         }
 
-        .alert {
-            padding: 15px 20px;
-            border-radius: 8px;
-            margin: 10px 0;
+        .empty-state p {
+            font-size: 0.95em;
             font-weight: 500;
         }
 
-        .alert-info { background: #d1ecf1; color: #0c5460; border-left: 4px solid #17a2b8; }
-        .alert-success { background: #d4edda; color: #155724; border-left: 4px solid #28a745; }
-        .alert-warning { background: #fff3cd; color: #856404; border-left: 4px solid #ffc107; }
-        .alert-danger { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; }
+        .alert {
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin: 14px 0;
+            font-weight: 500;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .alert:hover {
+            transform: translateX(4px);
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+        }
+        .alert-success {
+            background: var(--gravitek-green-bg);
+            color: var(--gravitek-green-dark);
+            border-left: 4px solid var(--gravitek-green);
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+        }
+        .alert-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-left: 4px solid #f59e0b;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
+        }
+        .alert-danger {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.1);
+        }
 
         .status-indicator {
             width: 12px;
             height: 12px;
             border-radius: 50%;
             display: inline-block;
-            margin-right: 8px;
-            animation: pulse 2s infinite;
+            margin-right: 12px;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            flex-shrink: 0;
         }
 
-        .status-indicator.running { background: #28a745; }
-        .status-indicator.waiting { background: #ffc107; }
-        .status-indicator.error { background: #dc3545; }
+        .status-indicator.running {
+            background: var(--gravitek-green);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+        }
+        .status-indicator.waiting {
+            background: #fbbf24;
+            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2);
+        }
+        .status-indicator.error {
+            background: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+        }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.7;
+                transform: scale(0.95);
+            }
         }
 
         .full-width {
             grid-column: 1 / -1;
+        }
+
+        .full-width + .full-width {
+            margin-top: 32px;
+        }
+
+        /* Scrollbar personnalisée */
+        .log-container::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .log-container::-webkit-scrollbar-track {
+            background: var(--gravitek-gray-900);
+            border-radius: 10px;
+        }
+
+        .log-container::-webkit-scrollbar-thumb {
+            background: var(--gravitek-gray-600);
+            border-radius: 10px;
+        }
+
+        .log-container::-webkit-scrollbar-thumb:hover {
+            background: var(--gravitek-gray-500);
+        }
+
+        @media (max-width: 768px) {
+            header {
+                padding: 36px 24px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .content-wrapper {
+                padding: 0 16px 32px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .card {
+                padding: 24px;
+            }
+
+            .vault-stats {
+                gap: 20px;
+            }
+
+            .controls {
+                gap: 8px;
+            }
+
+            .btn {
+                padding: 10px 18px;
+                font-size: 0.85em;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🧊 Dashboard AWS Glacier</h1>
+            <h1>🧊 AWS Glacier Dashboard</h1>
             <p class="subtitle">Gestion et monitoring des vaults Glacier</p>
             <div class="timestamp" id="timestamp">Chargement...</div>
         </header>
 
-        <!-- Section de contrôle -->
-        <div class="card">
-            <div class="card-header">
-                <div class="card-title">⚙️ Contrôles</div>
-            </div>
-            <div class="controls">
-                <button class="btn btn-primary" onclick="runScript('init')">
-                    🚀 Lancer les jobs d'inventaire
-                </button>
-                <button class="btn btn-secondary" onclick="runScript('check')">
-                    🔍 Vérifier l'état des jobs
-                </button>
-                <button class="btn btn-warning" onclick="runScript('delete-dry-run')">
-                    🧪 Suppression (Dry Run)
-                </button>
-                <button class="btn btn-danger" onclick="runScript('delete')">
-                    🗑️ Suppression réelle
-                </button>
-                <button class="btn btn-secondary" onclick="runScript('delete-vaults-only')">
-                    📦 Supprimer vaults uniquement
-                </button>
-            </div>
-            <div id="running-processes"></div>
-        </div>
-
-        <div class="grid">
-            <!-- Statut des vaults -->
+        <div class="content-wrapper">
+            <!-- Section de contrôle -->
             <div class="card">
-                <div class="card-header">
-                    <div class="card-title">📦 Vaults</div>
-                    <span class="badge info" id="vault-count">0</span>
+                <div class="card-header" onclick="toggleCard(this)">
+                    <div class="card-title">
+                        <span class="collapse-icon">▼</span>
+                        🎮 Contrôles
+                    </div>
                 </div>
-                <div id="vaults-list">
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📭</div>
-                        <p>Aucun vault trouvé</p>
+                <div class="card-content">
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="runScript('init')">
+                        ▶️ Lancer les jobs d'inventaire
+                    </button>
+                    <button class="btn btn-secondary" onclick="runScript('check')">
+                        🔍 Vérifier l'état des jobs
+                    </button>
+                    <button class="btn btn-warning" onclick="runScript('delete-dry-run')">
+                        🧪 Suppression (Dry Run)
+                    </button>
+                    <button class="btn btn-danger" onclick="runScript('delete')">
+                        🗑️ Suppression réelle
+                    </button>
+                    <button class="btn btn-secondary" onclick="runScript('delete-vaults-only')">
+                        🏗️ Supprimer vaults uniquement
+                    </button>
+                </div>
+                <div id="running-processes"></div>
+                </div>
+            </div>
+
+            <div class="grid">
+                <!-- Statut des vaults -->
+                <div class="card">
+                    <div class="card-header" onclick="toggleCard(this)">
+                        <div class="card-title">
+                            <span class="collapse-icon">▼</span>
+                            📦 Vaults
+                        </div>
+                        <span class="badge info" id="vault-count">0</span>
+                    </div>
+                    <div class="card-content">
+                    <div id="vaults-list">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📦</div>
+                            <p>Aucun vault trouvé</p>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+                <!-- Statut des jobs -->
+                <div class="card">
+                    <div class="card-header" onclick="toggleCard(this)">
+                        <div class="card-title">
+                            <span class="collapse-icon">▼</span>
+                            ⏳ Jobs d'inventaire
+                        </div>
+                        <span class="badge info" id="job-count">0</span>
+                    </div>
+                    <div class="card-content">
+                    <div id="jobs-list">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">⏳</div>
+                            <p>Aucun job en cours</p>
+                        </div>
+                    </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Statut des jobs -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">⏳ Jobs d'inventaire</div>
-                    <span class="badge info" id="job-count">0</span>
-                </div>
-                <div id="jobs-list">
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📋</div>
-                        <p>Aucun job en cours</p>
+            <!-- Progression des suppressions -->
+            <div class="card full-width" id="deletion-progress-card" style="display: none;">
+                <div class="card-header" onclick="toggleCard(this)">
+                    <div class="card-title">
+                        <span class="collapse-icon">▼</span>
+                        📊 Progression des suppressions
                     </div>
                 </div>
+                <div class="card-content">
+                <div id="deletion-progress"></div>
+                </div>
             </div>
-        </div>
 
-        <!-- Progression des suppressions -->
-        <div class="card full-width" id="deletion-progress-card" style="display: none;">
-            <div class="card-header">
-                <div class="card-title">🔥 Progression des suppressions</div>
-            </div>
-            <div id="deletion-progress"></div>
-        </div>
-
-        <!-- Logs -->
-        <div class="card full-width">
-            <div class="card-header">
-                <div class="card-title">📋 Logs récents</div>
-                <span class="badge info" id="log-file-name"></span>
-            </div>
-            <div class="log-container" id="logs">
-                <div class="empty-state">
-                    <p>Aucun log disponible</p>
+            <!-- Logs -->
+            <div class="card full-width">
+                <div class="card-header" onclick="toggleCard(this)">
+                    <div class="card-title">
+                        <span class="collapse-icon">▼</span>
+                        📝 Logs récents
+                    </div>
+                    <span class="badge info" id="log-file-name"></span>
+                </div>
+                <div class="card-content">
+                <div class="log-container" id="logs">
+                    <div class="empty-state">
+                        <p>Aucun log disponible</p>
+                    </div>
+                </div>
                 </div>
             </div>
         </div>
@@ -363,6 +682,61 @@
     <script>
         let autoRefresh = true;
         let refreshInterval = null;
+
+        // Toggle card collapse
+        function toggleCard(header) {
+            const content = header.nextElementSibling;
+            const icon = header.querySelector('.collapse-icon');
+
+            content.classList.toggle('collapsed');
+            icon.classList.toggle('collapsed');
+
+            // Sauvegarder l'état dans localStorage
+            const cardTitle = header.querySelector('.card-title').textContent.trim();
+            const isCollapsed = content.classList.contains('collapsed');
+            localStorage.setItem('card-' + cardTitle, isCollapsed);
+
+            // Synchroniser Vaults et Jobs d'inventaire
+            if (cardTitle.includes('Vaults') || cardTitle.includes('Jobs d\'inventaire')) {
+                syncVaultsAndJobs(isCollapsed);
+            }
+        }
+
+        // Synchroniser l'état de Vaults et Jobs
+        function syncVaultsAndJobs(isCollapsed) {
+            document.querySelectorAll('.card-header').forEach(header => {
+                const title = header.querySelector('.card-title').textContent.trim();
+                if (title.includes('Vaults') || title.includes('Jobs d\'inventaire')) {
+                    const content = header.nextElementSibling;
+                    const icon = header.querySelector('.collapse-icon');
+
+                    if (isCollapsed) {
+                        content.classList.add('collapsed');
+                        icon.classList.add('collapsed');
+                    } else {
+                        content.classList.remove('collapsed');
+                        icon.classList.remove('collapsed');
+                    }
+
+                    localStorage.setItem('card-' + title, isCollapsed);
+                }
+            });
+        }
+
+        // Restaurer l'état des cartes au chargement
+        function restoreCardStates() {
+            document.querySelectorAll('.card-header').forEach(header => {
+                const cardTitle = header.querySelector('.card-title').textContent.trim();
+                const isCollapsed = localStorage.getItem('card-' + cardTitle) === 'true';
+
+                if (isCollapsed) {
+                    const content = header.nextElementSibling;
+                    const icon = header.querySelector('.collapse-icon');
+                    content.classList.add('collapsed');
+                    icon.classList.add('collapsed');
+                }
+            });
+        }
 
         // Charger les données
         async function loadData() {
@@ -563,13 +937,13 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    alert(`✅ ${result.message}`);
+                    alert(`Succès: ${result.message}`);
                     loadData(); // Recharger les données
                 } else {
-                    alert(`❌ Erreur: ${result.error}`);
+                    alert(`Erreur: ${result.error}`);
                 }
             } catch (error) {
-                alert(`❌ Erreur de communication: ${error.message}`);
+                alert(`Erreur de communication: ${error.message}`);
             }
         }
 
@@ -599,6 +973,7 @@
         // Initialisation
         loadData();
         startAutoRefresh();
+        restoreCardStates();
     </script>
 </body>
 </html>

@@ -10,12 +10,184 @@ Scripts pour automatiser la suppression complète des vaults AWS Glacier et de l
 - **check_glacier_jobs.sh** : Vérifie l'état d'avancement des jobs
 - **delete_glacier_auto.sh** : Supprime les archives et les vaults
 
-### 🎨 Dashboard web (NOUVEAU)
+### 🎨 Dashboard web
 - **dashboard_server.py** : Serveur web avec API REST
 - **dashboard.html** : Interface graphique interactive
 - **start_dashboard.sh** : Script de lancement du dashboard
 
-## 🌐 Dashboard Web Interactif ⭐ NOUVEAU
+### 🐳 Docker (NOUVEAU)
+- **Dockerfile** : Image Docker avec tous les outils nécessaires
+- **docker-compose.yml** : Configuration Docker Compose
+- **docker-start.sh** : Script de démarrage Docker
+- **docker-stop.sh** : Script d'arrêt Docker
+- **docker-shell.sh** : Accès shell dans le container
+- **Makefile** : Commandes simplifiées
+- **.env.example** : Exemple de configuration
+
+## 🐳 Déploiement Docker ⭐ NOUVEAU
+
+**Solution conteneurisée complète - La méthode la plus simple pour démarrer !**
+
+### Pourquoi Docker ?
+
+✅ **Portable** : Fonctionne partout (macOS, Linux, Windows)
+✅ **Isolé** : Pas de conflit avec votre système
+✅ **Pré-configuré** : AWS CLI, jq, Python déjà installés
+✅ **Persistant** : Vos données restent même après l'arrêt
+✅ **Simple** : Une seule commande pour tout lancer
+
+### Installation rapide
+
+```bash
+# 1. Vérifier que Docker est installé
+docker --version
+
+# 2. Lancer tout avec Docker Compose
+./docker-start.sh
+
+# 3. Ouvrir le dashboard
+# http://localhost:8080
+```
+
+C'est tout ! 🎉
+
+### Utilisation avec Docker
+
+**Avec les scripts shell :**
+```bash
+# Démarrer
+./docker-start.sh
+
+# Arrêter
+./docker-stop.sh
+
+# Voir les logs
+docker compose logs -f
+
+# Ouvrir un shell dans le container
+./docker-shell.sh
+```
+
+**Avec Make (encore plus simple) :**
+```bash
+# Voir toutes les commandes
+make help
+
+# Démarrer
+make start
+
+# Voir les logs
+make logs
+
+# Lancer les jobs d'inventaire
+make init
+
+# Vérifier l'état
+make check
+
+# Suppression en dry-run
+make delete-dry
+
+# Arrêter
+make stop
+```
+
+**Avec Docker Compose directement :**
+```bash
+# Construire l'image
+docker compose build
+
+# Démarrer
+docker compose up -d
+
+# Logs en temps réel
+docker compose logs -f
+
+# Exécuter un script dans le container
+docker compose exec glacier-dashboard ./init_glacier_inventory.sh
+docker compose exec glacier-dashboard ./check_glacier_jobs.sh
+docker compose exec glacier-dashboard ./delete_glacier_auto.sh --dry-run
+
+# Arrêter
+docker compose down
+```
+
+### Configuration Docker
+
+**Volumes montés :**
+- `~/.aws` → Credentials AWS (lecture seule)
+- `./glacier_inventory` → Inventaires téléchargés
+- `./glacier_logs` → Logs persistants
+- `./job_data` → Fichiers de jobs
+
+**Ports exposés :**
+- `8080` → Dashboard web
+
+**Variables d'environnement :**
+Créez un fichier `.env` à partir de `.env.example` :
+```bash
+cp .env.example .env
+# Éditez .env si nécessaire
+```
+
+### Workflow Docker complet
+
+```bash
+# 1. Première fois : construire et démarrer
+make start
+
+# 2. Ouvrir le navigateur
+# http://localhost:8080
+
+# 3. Utiliser le dashboard OU les commandes Make
+
+# Option A : Via le dashboard web
+# - Cliquez sur les boutons dans l'interface
+
+# Option B : Via Make
+make init           # Lancer les jobs d'inventaire
+make check          # Vérifier l'état
+make delete-dry     # Test en dry-run
+make delete         # Suppression réelle (demande confirmation)
+
+# 4. Suivre les logs en temps réel
+make logs
+
+# 5. Arrêter quand terminé
+make stop
+```
+
+### Commandes Make disponibles
+
+| Commande | Description |
+|----------|-------------|
+| `make help` | Afficher l'aide |
+| `make build` | Construire l'image Docker |
+| `make start` | Démarrer le container |
+| `make stop` | Arrêter le container |
+| `make restart` | Redémarrer le container |
+| `make logs` | Voir les logs en temps réel |
+| `make shell` | Ouvrir un shell dans le container |
+| `make status` | Afficher l'état du container |
+| `make clean` | Supprimer container et image |
+| `make init` | Lancer les jobs d'inventaire |
+| `make check` | Vérifier l'état des jobs |
+| `make delete-dry` | Suppression en dry-run |
+| `make delete` | Suppression réelle |
+| `make vaults-only` | Supprimer uniquement les vaults |
+
+### Avantages de la version Docker
+
+| Local | Docker |
+|-------|--------|
+| Installer AWS CLI manuellement | ✅ Déjà inclus |
+| Installer jq manuellement | ✅ Déjà inclus |
+| Installer Python manuellement | ✅ Déjà inclus |
+| Gérer les dépendances | ✅ Tout pré-configuré |
+| Conflits de versions | ✅ Environnement isolé |
+| Portabilité limitée | ✅ Fonctionne partout |
+
+## 🌐 Dashboard Web Interactif
 
 **Interface graphique moderne pour gérer vos vaults Glacier depuis votre navigateur !**
 

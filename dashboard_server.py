@@ -16,8 +16,11 @@ import threading
 import time
 from urllib.parse import parse_qs, urlparse
 
-PORT = 8080
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PORT = int(os.environ.get('PORT', 8080))
+
+# Utiliser le répertoire de travail courant pour permettre le fonctionnement avec Docker volumes
+# Si lancé localement, assurez-vous d'être dans le bon répertoire
+CURRENT_DIR = os.getcwd()
 
 # Processus en cours d'exécution
 running_processes = {}

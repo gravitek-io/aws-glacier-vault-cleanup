@@ -6,7 +6,7 @@ REGION="eu-west-1"           # Adapte selon ta région
 JOBS_DIR="."                 # Dossier contenant les job*.json
 TMP_DIR="./glacier_inventory"
 LOG_DIR="./glacier_logs"
-DELAY_BETWEEN_DELETES=0.5    # Délai en secondes pour éviter le rate limiting
+DELAY_BETWEEN_DELETES=0.2    # Délai en secondes pour éviter le rate limiting
 MAX_RETRIES=3                # Nombre de tentatives en cas d'erreur
 
 mkdir -p "$TMP_DIR" "$LOG_DIR"
@@ -242,7 +242,7 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
           fi
 
           # Pause pour éviter le rate limiting
-          sleep "$DELAY_BETWEEN_DELETES"
+          #sleep "$DELAY_BETWEEN_DELETES"
         done < <(jq -r '.ArchiveList[].ArchiveId' "$ACTIVE_INVENTORY")
 
         log "INFO" "Suppression terminée pour $VAULT : $SUCCESS_COUNT réussies, $FAILED_COUNT échouées"

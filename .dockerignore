@@ -1,0 +1,50 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Logs et données générées
+glacier_logs/
+glacier_inventory/
+job_*.json
+*.log
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Credentials AWS (ne jamais inclure dans l'image)
+.aws/
+credentials
+config
+
+# Documentation
+README.md
+*.md
+
+# Fichiers temporaires
+*.tmp
+*.bak
+*.swp
+*~
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Données de test
+test/
+tests/

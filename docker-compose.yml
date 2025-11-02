@@ -1,0 +1,59 @@
+services:
+  glacier-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: glacier-manager
+    image: glacier-manager:latest
+
+    ports:
+      - "8080:8080"
+
+    volumes:
+      # Credentials AWS (lecture seule)
+      - ~/.aws:/home/glacier/.aws:ro
+
+      # Monter le répertoire complet pour synchroniser tous les fichiers
+      # (job_*.json, inventaires, logs, etc.)
+      - ./:/home/glacier/data:rw
+
+    working_dir: /home/glacier/data
+
+    environment:
+      # Configuration AWS (optionnel, peut aussi utiliser les credentials du volume)
+      - AWS_REGION=eu-west-1
+      - AWS_DEFAULT_REGION=eu-west-1
+      # Décommenter si vous voulez utiliser des variables d'environnement pour les credentials
+      # - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      # - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    # Limites de ressources (optionnel)
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# Créer un réseau dédié (optionnel)
+networks:
+  default:
+    name: glacier-network
