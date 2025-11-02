@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard AWS Glacier</title>
+    <title>AWS Glacier Dashboard</title>
     <style>
         :root {
             --gravitek-green: #10b981;
@@ -571,8 +571,8 @@
     <div class="container">
         <header>
             <h1>🧊 AWS Glacier Dashboard</h1>
-            <p class="subtitle">Gestion et monitoring des vaults Glacier</p>
-            <div class="timestamp" id="timestamp">Chargement...</div>
+            <p class="subtitle">Glacier vaults management and monitoring</p>
+            <div class="timestamp" id="timestamp">Loading...</div>
         </header>
 
         <div class="content-wrapper">
@@ -581,25 +581,25 @@
                 <div class="card-header" onclick="toggleCard(this)">
                     <div class="card-title">
                         <span class="collapse-icon">▼</span>
-                        🎮 Contrôles
+                        🎮 Controls
                     </div>
                 </div>
                 <div class="card-content">
                 <div class="controls">
                     <button class="btn btn-primary" onclick="runScript('init')">
-                        ▶️ Lancer les jobs d'inventaire
+                        ▶️ Start Inventory Jobs
                     </button>
                     <button class="btn btn-secondary" onclick="runScript('check')">
-                        🔍 Vérifier l'état des jobs
+                        🔍 Check Jobs Status
                     </button>
                     <button class="btn btn-warning" onclick="runScript('delete-dry-run')">
-                        🧪 Suppression (Dry Run)
+                        🧪 Deletion (Dry Run)
                     </button>
                     <button class="btn btn-danger" onclick="runScript('delete')">
-                        🗑️ Suppression réelle
+                        🗑️ Real Deletion
                     </button>
                     <button class="btn btn-secondary" onclick="runScript('delete-vaults-only')">
-                        🏗️ Supprimer vaults uniquement
+                        🏗️ Delete Vaults Only
                     </button>
                 </div>
                 <div id="running-processes"></div>
@@ -607,7 +607,7 @@
             </div>
 
             <div class="grid">
-                <!-- Statut des vaults -->
+                <!-- Vaults Status -->
                 <div class="card">
                     <div class="card-header" onclick="toggleCard(this)">
                         <div class="card-title">
@@ -620,7 +620,7 @@
                     <div id="vaults-list">
                         <div class="empty-state">
                             <div class="empty-state-icon">📦</div>
-                            <p>Aucun vault trouvé</p>
+                            <p>No vaults found</p>
                         </div>
                     </div>
                     </div>
@@ -631,7 +631,7 @@
                     <div class="card-header" onclick="toggleCard(this)">
                         <div class="card-title">
                             <span class="collapse-icon">▼</span>
-                            ⏳ Jobs d'inventaire
+                            ⏳ Inventory Jobs
                         </div>
                         <span class="badge info" id="job-count">0</span>
                     </div>
@@ -639,19 +639,19 @@
                     <div id="jobs-list">
                         <div class="empty-state">
                             <div class="empty-state-icon">⏳</div>
-                            <p>Aucun job en cours</p>
+                            <p>No jobs running</p>
                         </div>
                     </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Progression des suppressions -->
+            <!-- Deletion Progress -->
             <div class="card full-width" id="deletion-progress-card" style="display: none;">
                 <div class="card-header" onclick="toggleCard(this)">
                     <div class="card-title">
                         <span class="collapse-icon">▼</span>
-                        📊 Progression des suppressions
+                        📊 Deletion Progress
                     </div>
                 </div>
                 <div class="card-content">
@@ -664,14 +664,14 @@
                 <div class="card-header" onclick="toggleCard(this)">
                     <div class="card-title">
                         <span class="collapse-icon">▼</span>
-                        📝 Logs récents
+                        📝 Recent Logs
                     </div>
                     <span class="badge info" id="log-file-name"></span>
                 </div>
                 <div class="card-content">
                 <div class="log-container" id="logs">
                     <div class="empty-state">
-                        <p>Aucun log disponible</p>
+                        <p>No logs available</p>
                     </div>
                 </div>
                 </div>
@@ -696,17 +696,17 @@
             const isCollapsed = content.classList.contains('collapsed');
             localStorage.setItem('card-' + cardTitle, isCollapsed);
 
-            // Synchroniser Vaults et Jobs d'inventaire
-            if (cardTitle.includes('Vaults') || cardTitle.includes('Jobs d\'inventaire')) {
+            // Synchronize Vaults and Inventory Jobs
+            if (cardTitle.includes('Vaults') || cardTitle.includes('Inventory Jobs')) {
                 syncVaultsAndJobs(isCollapsed);
             }
         }
 
-        // Synchroniser l'état de Vaults et Jobs
+        // Synchronize Vaults and Jobs state
         function syncVaultsAndJobs(isCollapsed) {
             document.querySelectorAll('.card-header').forEach(header => {
                 const title = header.querySelector('.card-title').textContent.trim();
-                if (title.includes('Vaults') || title.includes('Jobs d\'inventaire')) {
+                if (title.includes('Vaults') || title.includes('Inventory Jobs')) {
                     const content = header.nextElementSibling;
                     const icon = header.querySelector('.collapse-icon');
 
@@ -745,7 +745,7 @@
                 const data = await response.json();
                 updateUI(data);
             } catch (error) {
-                console.error('Erreur chargement données:', error);
+                console.error('Error loading data:', error);
             }
         }
 
@@ -753,7 +753,7 @@
         function updateUI(data) {
             // Timestamp
             document.getElementById('timestamp').textContent =
-                `Dernière mise à jour: ${new Date(data.timestamp).toLocaleString('fr-FR')}`;
+                `Last updated: ${new Date(data.timestamp).toLocaleString('fr-FR')}`;
 
             // Vaults
             updateVaults(data.vaults);
@@ -761,7 +761,7 @@
             // Jobs
             updateJobs(data.jobs);
 
-            // Progression des suppressions
+            // Deletion Progress
             updateDeletionProgress(data.deletion_progress);
 
             // Logs
@@ -777,7 +777,7 @@
             const count = document.getElementById('vault-count');
 
             if (!vaults || vaults.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>Aucun vault trouvé</p></div>';
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>No vaults found</p></div>';
                 count.textContent = '0';
                 return;
             }
@@ -793,11 +793,11 @@
                             <span class="stat-value">${vault.NumberOfArchives.toLocaleString()}</span>
                         </div>
                         <div class="stat">
-                            <span class="stat-label">Taille</span>
+                            <span class="stat-label">Size</span>
                             <span class="stat-value">${formatBytes(vault.SizeInBytes)}</span>
                         </div>
                         <div class="stat">
-                            <span class="stat-label">Dernier inventaire</span>
+                            <span class="stat-label">Last Inventory</span>
                             <span class="stat-value">${vault.LastInventoryDate ? new Date(vault.LastInventoryDate).toLocaleDateString('fr-FR') : 'N/A'}</span>
                         </div>
                     </div>
@@ -811,7 +811,7 @@
             const count = document.getElementById('job-count');
 
             if (!jobs || jobs.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>Aucun job en cours</p></div>';
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>No jobs running</p></div>';
                 count.textContent = '0';
                 return;
             }
@@ -822,7 +822,7 @@
                 const status = job.status || {};
                 const badgeClass = status.completed ?
                     (status.statusCode === 'Succeeded' ? 'success' : 'danger') : 'warning';
-                const statusText = status.completed ? status.statusCode : 'En cours';
+                const statusText = status.completed ? status.statusCode : 'In Progress';
 
                 return `
                     <div class="vault-item">
@@ -862,11 +862,11 @@
                             <span class="stat-value">${data.total.toLocaleString()}</span>
                         </div>
                         <div class="stat">
-                            <span class="stat-label">Supprimées</span>
+                            <span class="stat-label">Deleted</span>
                             <span class="stat-value">${data.deleted.toLocaleString()}</span>
                         </div>
                         <div class="stat">
-                            <span class="stat-label">Restantes</span>
+                            <span class="stat-label">Remaining</span>
                             <span class="stat-value">${data.remaining.toLocaleString()}</span>
                         </div>
                     </div>
@@ -880,7 +880,7 @@
             const fileNameBadge = document.getElementById('log-file-name');
 
             if (!logs || logs.length === 0) {
-                container.innerHTML = '<div class="empty-state"><p>Aucun log disponible</p></div>';
+                container.innerHTML = '<div class="empty-state"><p>No logs available</p></div>';
                 fileNameBadge.textContent = '';
                 return;
             }
@@ -896,7 +896,7 @@
                 return `<div class="${className}">${escapeHtml(line)}</div>`;
             }).join('');
 
-            // Auto-scroll vers le bas
+            // Auto-scroll to bottom
             container.scrollTop = container.scrollHeight;
         }
 
@@ -912,7 +912,7 @@
             container.innerHTML = `
                 <div class="alert alert-info" style="margin-top: 15px;">
                     <span class="status-indicator running"></span>
-                    Processus en cours: ${processes.join(', ')}
+                    Running processes: ${processes.join(', ')}
                 </div>
             `;
         }
@@ -920,8 +920,8 @@
         // Lancer un script
         async function runScript(scriptName) {
             const confirmMessages = {
-                'delete': 'Êtes-vous sûr de vouloir lancer la suppression RÉELLE des archives ?',
-                'delete-vaults-only': 'Êtes-vous sûr de vouloir supprimer les vaults vides ?'
+                'delete': 'Are you sure you want to start REAL deletion of archives ?',
+                'delete-vaults-only': 'Are you sure you want to delete empty vaults ?'
             };
 
             if (confirmMessages[scriptName]) {
@@ -937,13 +937,13 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    alert(`Succès: ${result.message}`);
-                    loadData(); // Recharger les données
+                    alert(`Success: ${result.message}`);
+                    loadData(); // Reload data
                 } else {
-                    alert(`Erreur: ${result.error}`);
+                    alert(`Error: ${result.error}`);
                 }
             } catch (error) {
-                alert(`Erreur de communication: ${error.message}`);
+                alert(`Communication error: ${error.message}`);
             }
         }
 
@@ -967,10 +967,10 @@
             if (refreshInterval) {
                 clearInterval(refreshInterval);
             }
-            refreshInterval = setInterval(loadData, 5000); // Rafraîchir toutes les 5 secondes
+            refreshInterval = setInterval(loadData, 5000); // Refresh every 5 seconds
         }
 
-        // Initialisation
+        // Initialization
         loadData();
         startAutoRefresh();
         restoreCardStates();

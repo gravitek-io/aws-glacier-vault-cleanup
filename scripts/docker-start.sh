@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Déterminer le répertoire racine du projet
+# Determine project root directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 DOCKER_DIR="$ROOT_DIR/docker"
@@ -11,60 +11,60 @@ echo "🐳 Glacier Manager - Docker Edition"
 echo "===================================="
 echo ""
 
-# Vérifier que Docker est installé
+# Check that Docker is installed
 if ! command -v docker &> /dev/null; then
-    echo "❌ Erreur: Docker n'est pas installé"
-    echo "   Installez Docker depuis https://www.docker.com/get-started"
+    echo "❌ Error: Docker is not installed"
+    echo "   Install Docker from https://www.docker.com/get-started"
     exit 1
 fi
 
-# Vérifier que Docker Compose est disponible
+# Check that Docker Compose is available
 if ! docker compose version &> /dev/null && ! docker-compose --version &> /dev/null; then
-    echo "❌ Erreur: Docker Compose n'est pas disponible"
+    echo "❌ Error: Docker Compose is not available"
     exit 1
 fi
 
-# Créer les répertoires nécessaires s'ils n'existent pas
+# Create necessary directories if they don't exist
 mkdir -p "$DATA_DIR/glacier_inventory" "$DATA_DIR/glacier_logs" "$DATA_DIR/job_data"
 
-# Vérifier les credentials AWS
+# Check AWS credentials
 if [[ ! -d "$HOME/.aws" ]]; then
-    echo "⚠️  Avertissement: ~/.aws/ introuvable"
-    echo "   Assurez-vous d'avoir configuré vos credentials AWS avec 'aws configure'"
-    read -p "   Continuer quand même ? (y/N) " -n 1 -r
+    echo "⚠️  Warning: ~/.aws/ not found"
+    echo "   Make sure you have configured your AWS credentials with 'aws configure'"
+    read -p "   Continue anyway ? (y/N) " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         exit 1
     fi
 fi
 
-echo "🔨 Construction de l'image Docker (peut prendre quelques minutes)..."
+echo "🔨 Building Docker image (may take a few minutes)..."
 cd "$DOCKER_DIR"
 docker compose build
 
 echo ""
-echo "🚀 Lancement du container..."
+echo "🚀 Launching container..."
 docker compose up -d
 
 echo ""
-echo "✅ Container lancé avec succès !"
+echo "✅ Container launched successfully!"
 echo ""
-echo "📊 Dashboard disponible à : http://localhost:8080"
+echo "📊 Dashboard available at: http://localhost:8080"
 echo ""
-echo "Commandes utiles :"
-echo "  cd docker && docker compose logs -f              # Voir les logs en temps réel"
-echo "  cd docker && docker compose ps                   # État du container"
-echo "  cd docker && docker compose exec glacier-dashboard bash  # Ouvrir un shell"
-echo "  cd docker && docker compose down                 # Arrêter le container"
-echo "  make stop                            # Script d'arrêt"
+echo "Useful commands:"
+echo "  cd docker && docker compose logs -f              # View logs in real-time"
+echo "  cd docker && docker compose ps                   # Container status"
+echo "  cd docker && docker compose exec glacier-dashboard bash  # Open a shell"
+echo "  cd docker && docker compose down                 # Stop the container"
+echo "  make stop                            # Stop script"
 echo ""
-echo "Pour exécuter un script dans le container :"
+echo "To execute a script in the container:"
 echo "  cd docker && docker compose exec glacier-dashboard ./scripts/init_glacier_inventory.sh"
 echo "  cd docker && docker compose exec glacier-dashboard ./scripts/check_glacier_jobs.sh"
 echo "  cd docker && docker compose exec glacier-dashboard ./scripts/delete_glacier_auto.sh --dry-run"
 echo ""
-echo "Ou utilisez les raccourcis Makefile :"
-echo "  make init        # Lancer les jobs d'inventaire"
-echo "  make check       # Vérifier l'état des jobs"
-echo "  make delete-dry  # Suppression en mode dry-run"
+echo "Or use Makefile shortcuts:"
+echo "  make init        # Start inventory jobs"
+echo "  make check       # Check jobs status"
+echo "  make delete-dry  # Deletion in dry-run mode"
 echo ""

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Dashboard serveur pour la gestion des vaults AWS Glacier
-Lance un serveur web local avec interface graphique et API REST
+Dashboard server for AWS Glacier vaults management
+Runs a local web server with GUI and REST API
 """
 
 import http.server
@@ -18,22 +18,22 @@ from urllib.parse import parse_qs, urlparse
 
 PORT = int(os.environ.get('PORT', 8080))
 
-# Déterminer le répertoire racine du projet
-# Si lancé depuis web/, remonter d'un niveau
+# Determine project root directory
+# If run from web/, go up one level
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(SCRIPT_DIR) if os.path.basename(SCRIPT_DIR) == 'web' else SCRIPT_DIR
 
-# Répertoires du projet
+# Project directories
 DATA_DIR = os.path.join(ROOT_DIR, "data")
 SCRIPTS_DIR = os.path.join(ROOT_DIR, "scripts")
 WEB_DIR = os.path.join(ROOT_DIR, "web")
 
-# Processus en cours d'exécution
+# Running processes
 running_processes = {}
 
 
 def get_vault_status():
-    """Récupère le statut de tous les vaults"""
+    """Retrieve status of all vaults"""
     status = {
         "timestamp": datetime.now().isoformat(),
         "vaults": [],
@@ -42,14 +42,14 @@ def get_vault_status():
         "logs": []
     }
 
-    # Lire glacier.json
+    # Read glacier.json
     glacier_file = os.path.join(DATA_DIR, "glacier.json")
     if os.path.exists(glacier_file):
         with open(glacier_file, 'r') as f:
             glacier_data = json.load(f)
             status["vaults"] = glacier_data.get("VaultList", [])
 
-    # Lire les jobs
+    # Read jobs
     job_files = glob.glob(os.path.join(DATA_DIR, "job_*.json"))
     for job_file in job_files:
         try:
@@ -57,7 +57,7 @@ def get_vault_status():
                 job_data = json.load(f)
                 vault_name = os.path.basename(job_file).replace("job_", "").replace(".json", "")
 
-                # Vérifier le statut du job via AWS CLI
+                # Check job status via AWS CLI
                 job_status = check_job_status(vault_name, job_data.get("jobId"))
 
                 status["jobs"].append({
@@ -66,9 +66,9 @@ def get_vault_status():
                     "status": job_status
                 })
         except Exception as e:
-            print(f"Erreur lecture job {job_file}: {e}")
+            print(f"Error reading job {job_file}: {e}")
 
-    # Lire la progression des suppressions
+    # Read deletion progress
     inventory_dir = os.path.join(DATA_DIR, "glacier_inventory")
     if os.path.exists(inventory_dir):
         for working_file in glob.glob(os.path.join(inventory_dir, "*.working.json")):
@@ -96,9 +96,9 @@ def get_vault_status():
                     "progress": round(progress, 2)
                 }
             except Exception as e:
-                print(f"Erreur lecture progression {working_file}: {e}")
+                print(f"Error reading progress {working_file}: {e}")
 
-    # Lire les derniers logs
+    # Read latest logs
     log_dir = os.path.join(DATA_DIR, "glacier_logs")
     if os.path.exists(log_dir):
         log_files = sorted(glob.glob(os.path.join(log_dir, "deletion_*.log")), reverse=True)
@@ -110,9 +110,9 @@ def get_vault_status():
                     status["logs"] = [line.strip() for line in lines[-50:]]  # Dernières 50 lignes
                     status["latest_log_file"] = os.path.basename(latest_log)
             except Exception as e:
-                print(f"Erreur lecture log: {e}")
+                print(f"Error reading log: {e}")
 
-    # Ajouter les processus en cours
+    # Add running processes
     status["running_processes"] = list(running_processes.keys())
 
     return status
@@ -140,20 +140,20 @@ def check_job_status(vault_name, job_id):
                 "statusMessage": job_data.get("StatusMessage", "")
             }
     except Exception as e:
-        print(f"Erreur vérification job {vault_name}: {e}")
+        print(f"Error checking job {vault_name}: {e}")
 
-    return {"completed": False, "statusCode": "Unknown", "statusMessage": "Erreur de vérification"}
+    return {"completed": False, "statusCode": "Unknown", "statusMessage": "Verification error"}
 
 
 def run_script_async(script_name, args=None):
-    """Lance un script bash en arrière-plan"""
+    """Run a bash script in background"""
     script_path = os.path.join(SCRIPTS_DIR, script_name)
 
     if not os.path.exists(script_path):
-        return {"success": False, "error": f"Script {script_name} introuvable"}
+        return {"success": False, "error": f"Script .* not found"}
 
     if script_name in running_processes:
-        return {"success": False, "error": f"Le script {script_name} est déjà en cours d'exécution"}
+        return {"success": False, "error": f"Script .* is already running"}
 
     cmd = [script_path]
     if args:
@@ -161,13 +161,13 @@ def run_script_async(script_name, args=None):
 
     def run_process():
         try:
-            print(f"Lancement de {script_name} avec args: {args}")
+            print(f"Launching {script_name} with args: {args}")
             process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                cwd=ROOT_DIR  # Exécuter depuis la racine pour accès aux dossiers data/ et scripts/
+                cwd=ROOT_DIR  # Execute from root for access to data/ and scripts/ folders
             )
             running_processes[script_name] = process
 
@@ -177,27 +177,27 @@ def run_script_async(script_name, args=None):
             if script_name in running_processes:
                 del running_processes[script_name]
 
-            print(f"Script {script_name} terminé avec code: {process.returncode}")
+            print(f"Script {script_name} completed with code: {process.returncode}")
 
         except Exception as e:
-            print(f"Erreur exécution {script_name}: {e}")
+            print(f"Execution error {script_name}: {e}")
             if script_name in running_processes:
                 del running_processes[script_name]
 
     thread = threading.Thread(target=run_process, daemon=True)
     thread.start()
 
-    return {"success": True, "message": f"Script {script_name} lancé en arrière-plan"}
+    return {"success": True, "message": f"Script {script_name} launched in background"}
 
 
 class DashboardHandler(http.server.SimpleHTTPRequestHandler):
-    """Handler personnalisé pour le dashboard"""
+    """Custom handler for the dashboard"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=WEB_DIR, **kwargs)
 
     def do_GET(self):
-        """Gère les requêtes GET"""
+        """Handle GET requests"""
         parsed_path = urlparse(self.path)
 
         if parsed_path.path == '/api/status':
@@ -212,7 +212,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         elif parsed_path.path == '/' or parsed_path.path == '/dashboard':
-            # Servir la page HTML du dashboard
+            # Serve the dashboard HTML page
             self.send_response(200)
             self.send_header('Content-type', 'text/html; charset=utf-8')
             self.end_headers()
@@ -222,15 +222,15 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 with open(dashboard_html, 'rb') as f:
                     self.wfile.write(f.read())
             else:
-                self.wfile.write(b"<h1>Erreur: dashboard.html introuvable</h1>")
+                self.wfile.write(b"<h1>Error: dashboard.html not found</h1>")
             return
 
         else:
-            # Pour les autres fichiers (CSS, JS, etc.), utiliser le handler par défaut
+            # For other files (CSS, JS, etc.), use default handler
             super().do_GET()
 
     def do_POST(self):
-        """Gère les requêtes POST pour lancer les scripts"""
+        """Handle POST requests to run scripts"""
         parsed_path = urlparse(self.path)
 
         if parsed_path.path.startswith('/api/run/'):
@@ -265,7 +265,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_response(404)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
-                self.wfile.write(json.dumps({"success": False, "error": "Script inconnu"}).encode())
+                self.wfile.write(json.dumps({"success": False, "error": "Unknown script"}).encode())
 
             return
 
@@ -273,24 +273,24 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
 
     def log_message(self, format, *args):
-        """Logging personnalisé"""
+        """Custom logging"""
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {format % args}")
 
 
 def main():
-    """Lance le serveur web"""
+    """Start the web server"""
     print("=" * 60)
     print("🚀 Dashboard AWS Glacier")
     print("=" * 60)
-    print(f"Serveur démarré sur : http://localhost:{PORT}")
-    print(f"Répertoire racine : {ROOT_DIR}")
+    print(f"Server started on: http://localhost:{PORT}")
+    print(f"Root directory: {ROOT_DIR}")
     print(f"  - Data: {DATA_DIR}")
     print(f"  - Scripts: {SCRIPTS_DIR}")
     print(f"  - Web: {WEB_DIR}")
     print("")
-    print("Ouvrez votre navigateur à l'adresse : http://localhost:8080")
+    print("Open your browser at: http://localhost:8080")
     print("")
-    print("Appuyez sur Ctrl+C pour arrêter le serveur")
+    print("Press Ctrl+C to stop the server")
     print("=" * 60)
     print("")
 
@@ -298,7 +298,7 @@ def main():
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
-            print("\n\n🛑 Arrêt du serveur...")
+            print("\n\n🛑 Stopping server...")
             httpd.shutdown()
 
 

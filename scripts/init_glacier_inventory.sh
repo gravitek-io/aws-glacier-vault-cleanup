@@ -1,73 +1,73 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Déterminer le répertoire racine du projet
+# Determine project root directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 DATA_DIR="$ROOT_DIR/data"
 
-ACCOUNT_ID="-"               # Ton ID de compte (ou "-")
-REGION="eu-west-1"           # Adapte selon ta région
+ACCOUNT_ID="-"               # Your account ID (or "-")
+REGION="eu-west-1"           # Adapt to your region
 GLACIER_JSON="$DATA_DIR/glacier.json"
 JOBS_DIR="$DATA_DIR"
 
-echo "🚀 Initialisation des jobs d'inventaire Glacier"
+echo "🚀 Initialization of Glacier inventory jobs"
 echo "================================================"
 
-# Vérifier que glacier.json existe
+# Check that glacier.json exists
 if [[ ! -f "$GLACIER_JSON" ]]; then
-  echo "❌ Fichier $GLACIER_JSON introuvable"
+  echo "❌ File .* not found"
   exit 1
 fi
 
-# Extraire la liste des vaults
+# Extract vault list
 VAULTS=$(jq -r '.VaultList[].VaultName' "$GLACIER_JSON")
 
 if [[ -z "$VAULTS" ]]; then
-  echo "❌ Aucun vault trouvé dans $GLACIER_JSON"
+  echo "❌ No vaults found in $GLACIER_JSON"
   exit 1
 fi
 
-echo "📋 Vaults trouvés :"
+echo "📋 Vaults found:"
 echo "$VAULTS" | sed 's/^/  - /'
 echo ""
 
-# Pour chaque vault, lancer un job d'inventaire
+# For each vault, start a job inventory
 for VAULT in $VAULTS; do
   echo "=============================="
   echo "📦 Vault : $VAULT"
 
-  # Lancer le job d'inventaire
-  echo "🔄 Lancement du job d'inventaire..."
+  # Lancer le job inventory
+  echo "🔄 Launching job inventory..."
   JOB_OUTPUT=$(aws glacier initiate-job \
     --account-id "$ACCOUNT_ID" \
     --vault-name "$VAULT" \
     --region "$REGION" \
     --job-parameters '{"Type":"inventory-retrieval"}')
 
-  # Extraire le job ID et location
+  # Extract job ID and location
   JOB_ID=$(echo "$JOB_OUTPUT" | jq -r '.jobId')
   LOCATION=$(echo "$JOB_OUTPUT" | jq -r '.location')
 
   if [[ -z "$JOB_ID" || "$JOB_ID" == "null" ]]; then
-    echo "❌ Échec du lancement du job pour $VAULT"
+    echo "❌ Failed to launch job for $VAULT"
     continue
   fi
 
-  echo "✅ Job lancé avec succès"
+  echo "✅ Job launched successfully"
   echo "   Job ID : $JOB_ID"
   echo "   Location : $LOCATION"
 
-  # Sauvegarder le job dans un fichier job_<vault>.json
+  # Save job to a file job_<vault>.json
   JOB_FILE="$JOBS_DIR/job_${VAULT}.json"
   echo "$JOB_OUTPUT" > "$JOB_FILE"
-  echo "💾 Job sauvegardé dans : $JOB_FILE"
+  echo "💾 Job saved in: $JOB_FILE"
 
   echo ""
 done
 
-echo "🎉 Tous les jobs d'inventaire ont été lancés !"
+echo "🎉 All jobs d inventory have been launched!"
 echo ""
-echo "⏳ IMPORTANT : Les jobs d'inventaire Glacier prennent généralement 3-5 heures."
-echo "   Utilisez check_glacier_jobs.sh pour vérifier l'état des jobs."
-echo "   Une fois tous les jobs terminés, lancez delete_glacier_auto.sh pour nettoyer."
+echo "⏳ IMPORTANT : Glacier inventory jobs usually take 3-5 hours."
+echo "   Use check_glacier_jobs.sh to check job status."
+echo "   Once all jobs are completed, run delete_glacier_auto.sh to clean up."

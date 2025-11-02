@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Déterminer le répertoire racine du projet
+# Determine project root directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 DOCKER_DIR="$ROOT_DIR/docker"
 
-echo "🐚 Ouverture d'un shell dans le container..."
+echo "🐚 Opening a shell in the container..."
 echo ""
 
 cd "$DOCKER_DIR"

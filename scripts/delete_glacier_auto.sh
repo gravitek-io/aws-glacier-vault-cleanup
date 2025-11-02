@@ -1,25 +1,25 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Déterminer le répertoire racine du projet
+# Determine project root directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 DATA_DIR="$ROOT_DIR/data"
 
 ACCOUNT_ID="-"               # Ton ID de compte (ou "-")
 REGION="eu-west-1"           # Adapte selon ta région
-JOBS_DIR="$DATA_DIR"         # Dossier contenant les job*.json
+JOBS_DIR="$DATA_DIR"         # Folder containing job*.json
 TMP_DIR="$DATA_DIR/glacier_inventory"
 LOG_DIR="$DATA_DIR/glacier_logs"
-DELAY_BETWEEN_DELETES=0.2    # Délai en secondes pour éviter le rate limiting
-MAX_RETRIES=3                # Nombre de tentatives en cas d'erreur
+DELAY_BETWEEN_DELETES=0.2    # Delay in seconds to avoid rate limiting
+MAX_RETRIES=3                # Number of retries in case of error
 
 mkdir -p "$TMP_DIR" "$LOG_DIR"
 
-# Initialiser le fichier de log avec timestamp
+# Initialize log file with timestamp
 LOG_FILE="$LOG_DIR/deletion_$(date +%Y%m%d_%H%M%S).log"
 
-# Fonction de logging
+# Logging function
 log() {
   local level="$1"
   shift
@@ -28,17 +28,17 @@ log() {
   echo "[$timestamp] [$level] $message" | tee -a "$LOG_FILE"
 }
 
-# Fonction pour gérer l'interruption propre (Ctrl+C)
+# Function to handle clean interruption (Ctrl+C)
 cleanup_on_exit() {
-  log "WARN" "Script interrompu par l'utilisateur (Ctrl+C)"
-  log "INFO" "La progression a été sauvegardée. Relancez le script pour reprendre."
+  log "WARN" "Script interrupted by user (Ctrl+C)"
+  log "INFO" "Progress has been saved. Rerun the script to resume."
   exit 130
 }
 
 trap cleanup_on_exit SIGINT SIGTERM
 
-log "INFO" "=== Démarrage du script de suppression Glacier ==="
-log "INFO" "Fichier de log : $LOG_FILE"
+log "INFO" "=== Starting Glacier deletion script ==="
+log "INFO" "Log file: $LOG_FILE"
 
 DRY_RUN=false
 VAULTS_ONLY=false
@@ -48,25 +48,25 @@ for arg in "$@"; do
   case $arg in
     --dry-run)
       DRY_RUN=true
-      log "INFO" "MODE DRY RUN activé"
-      echo "🔎 MODE DRY RUN activé : aucune suppression réelle ne sera faite"
+      log "INFO" "DRY RUN MODE enabled"
+      echo "🔎 DRY RUN MODE enabled : no real deletion will be done"
       ;;
     --vaults-only)
       VAULTS_ONLY=true
-      log "INFO" "MODE VAULTS ONLY activé"
-      echo "🗑️  MODE VAULTS ONLY : suppression uniquement des vaults vides"
+      log "INFO" "VAULTS ONLY MODE enabled"
+      echo "🗑️  MODE VAULTS ONLY : only delete empty vaults"
       ;;
     *)
-      log "ERROR" "Argument inconnu : $arg"
-      echo "❌ Argument inconnu : $arg"
+      log "ERROR" "Unknown argument: $arg"
+      echo "❌ Unknown argument: $arg"
       echo "Usage: $0 [--dry-run] [--vaults-only]"
       exit 1
       ;;
   esac
 done
 
-log "INFO" "Recherche des fichiers job*.json dans $JOBS_DIR..."
-echo "🔍 Recherche des fichiers job*.json dans $JOBS_DIR..."
+log "INFO" "Searching for job*.json files in $JOBS_DIR..."
+echo "🔍 Searching for job*.json files in $JOBS_DIR..."
 TOTAL_VAULTS=0
 VAULTS_DELETED=0
 VAULTS_FAILED=0
@@ -77,19 +77,19 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
   TOTAL_VAULTS=$((TOTAL_VAULTS + 1))
   echo ""
   echo "=============================="
-  echo "📄 Fichier : $JOB_FILE"
+  echo "📄 File: $JOB_FILE"
 
   VAULT=$(jq -r '.location' "$JOB_FILE" | sed -E 's#.*/vaults/([^/]+)/.*#\1#')
   JOB_ID=$(jq -r '.jobId' "$JOB_FILE")
 
   if [[ -z "$VAULT" || -z "$JOB_ID" || "$VAULT" == "null" ]]; then
-    log "ERROR" "Impossible d'extraire vault/jobId depuis $JOB_FILE"
-    echo "⚠️  Impossible d'extraire vault/jobId depuis $JOB_FILE"
+    log "ERROR" "Cannot extract vault/jobId from $JOB_FILE"
+    echo "⚠️  Cannot extract vault/jobId from $JOB_FILE"
     VAULTS_FAILED=$((VAULTS_FAILED + 1))
     continue
   fi
 
-  log "INFO" "Traitement du vault : $VAULT (Job ID: $JOB_ID)"
+  log "INFO" "Processing vault: $VAULT (Job ID: $JOB_ID)"
   echo "➡️  Vault : $VAULT"
   echo "➡️  Job ID : $JOB_ID"
 
@@ -110,54 +110,54 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
     STATUS_CODE=$(echo "$JOB_STATUS" | jq -r '.StatusCode')
 
     if [[ "$COMPLETED" != "true" ]] || [[ "$STATUS_CODE" != "Succeeded" ]]; then
-      echo "❌ Le job n'est pas terminé (Statut: $STATUS_CODE)"
-      echo "   Lancez ./check_glacier_jobs.sh pour vérifier l'état"
+      echo "❌ Job not completed (Status: $STATUS_CODE)"
+      echo "   Run ./check_glacier_jobs.sh to check status"
       VAULTS_FAILED=$((VAULTS_FAILED + 1))
       continue
     fi
-    echo "✅ Job terminé avec succès"
+    echo "✅ Job completed successfully"
   fi
 
   # Télécharger l'inventaire si nécessaire
   if [[ ! -f "$INVENTORY_FILE" ]] && [[ "$VAULTS_ONLY" == false ]]; then
-    echo "📥 Téléchargement de l'inventaire..."
+    echo "📥 Downloading inventory..."
     if aws glacier get-job-output \
       --account-id "$ACCOUNT_ID" \
       --vault-name "$VAULT" \
       --job-id "$JOB_ID" \
       "$INVENTORY_FILE" \
       --region "$REGION"; then
-      echo "✅ Inventaire sauvegardé : $INVENTORY_FILE"
+      echo "✅ Inventory saved: $INVENTORY_FILE"
     else
-      echo "❌ Échec du téléchargement de l'inventaire"
+      echo "❌ Failed to download inventory"
       VAULTS_FAILED=$((VAULTS_FAILED + 1))
       continue
     fi
   fi
 
-  # Traiter les archives (sauf en mode --vaults-only)
+  # Process archives (except in --vaults-only mode)
   if [[ "$VAULTS_ONLY" == false ]]; then
     # Vérifier si une copie de travail existe (reprise après interruption)
     if [[ -f "$WORKING_INVENTORY" ]]; then
-      log "INFO" "Reprise détectée : utilisation de la copie de travail pour $VAULT"
-      echo "🔄 Reprise détectée : utilisation de l'inventaire de travail existant"
+      log "INFO" "Resume detected: using working copy for $VAULT"
+      echo "🔄 Resume detected: using existing working inventory"
       ACTIVE_INVENTORY="$WORKING_INVENTORY"
     elif [[ -f "$INVENTORY_FILE" ]]; then
-      # Créer une copie de travail pour la première fois
-      log "INFO" "Création de la copie de travail pour $VAULT"
+      # Create working copy for the first time
+      log "INFO" "Creating working copy for $VAULT"
       cp "$INVENTORY_FILE" "$WORKING_INVENTORY"
       ACTIVE_INVENTORY="$WORKING_INVENTORY"
     else
-      log "ERROR" "Aucun inventaire trouvé pour $VAULT"
-      echo "❌ Aucun inventaire trouvé"
+      log "ERROR" "No inventory found for $VAULT"
+      echo "❌ No inventory found"
       VAULTS_FAILED=$((VAULTS_FAILED + 1))
       continue
     fi
 
-    # Valider le JSON et extraire les archives
+    # Validate JSON and extract archives
     if ! jq empty "$ACTIVE_INVENTORY" 2>/dev/null; then
-      log "ERROR" "Fichier JSON invalide : $ACTIVE_INVENTORY"
-      echo "❌ Fichier JSON invalide : $ACTIVE_INVENTORY"
+      log "ERROR" "Invalid JSON file: $ACTIVE_INVENTORY"
+      echo "❌ Invalid JSON file: $ACTIVE_INVENTORY"
       VAULTS_FAILED=$((VAULTS_FAILED + 1))
       continue
     fi
@@ -166,26 +166,26 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
     ORIGINAL_COUNT=$(jq -r '.ArchiveList | length' "$INVENTORY_FILE" 2>/dev/null || echo "$ARCHIVE_COUNT")
 
     if [[ "$ARCHIVE_COUNT" -eq 0 ]]; then
-      log "INFO" "Aucune archive à supprimer dans $VAULT"
-      echo "⚠️  Aucune archive trouvée dans $VAULT"
-      # Nettoyer la copie de travail
+      log "INFO" "No archives to delete in $VAULT"
+      echo "⚠️  No archives found in $VAULT"
+      # Clean working copy
       rm -f "$WORKING_INVENTORY" "$PROGRESS_FILE"
     else
       if [[ "$ARCHIVE_COUNT" -lt "$ORIGINAL_COUNT" ]]; then
         ALREADY_DELETED=$((ORIGINAL_COUNT - ARCHIVE_COUNT))
-        log "INFO" "$ALREADY_DELETED/$ORIGINAL_COUNT archives déjà supprimées lors d'une exécution précédente"
-        echo "🔄 Reprise : $ALREADY_DELETED/$ORIGINAL_COUNT archives déjà supprimées"
+        log "INFO" "$ALREADY_DELETED/$ORIGINAL_COUNT archives already deleted in a previous run"
+        echo "🔄 Resume: $ALREADY_DELETED/$ORIGINAL_COUNT archives already deleted"
       fi
 
-      log "INFO" "$ARCHIVE_COUNT archives restantes dans le vault $VAULT"
-      echo "🧨 $ARCHIVE_COUNT archives trouvées dans le vault"
+      log "INFO" "$ARCHIVE_COUNT remaining archives in vault $VAULT"
+      echo "🧨 $ARCHIVE_COUNT archives found in vault"
 
       if $DRY_RUN; then
-        log "INFO" "DRY RUN : simulation de suppression de $ARCHIVE_COUNT archives"
-        echo "🚫 DRY RUN → suppression de $ARCHIVE_COUNT archives simulée"
+        log "INFO" "DRY RUN : simulating deletion of $ARCHIVE_COUNT archives"
+        echo "🚫 DRY RUN → suppression de $ARCHIVE_COUNT archives simulated"
       else
-        echo "🧹 Suppression réelle des archives..."
-        log "INFO" "Début de la suppression de $ARCHIVE_COUNT archives"
+        echo "🧹 Real deletion of archives..."
+        log "INFO" "Starting deletion of $ARCHIVE_COUNT archives"
 
         SUCCESS_COUNT=0
         FAILED_COUNT=0
@@ -196,21 +196,21 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
           CURRENT=$((CURRENT + 1))
           [[ -z "$ID" || "$ID" == "null" || "$ID" == -* ]] && continue
 
-          # Afficher la progression tous les 100 archives
-          if (( CURRENT % 100 == 0 )); then
+          # Show progress every 25 archives
+          if (( CURRENT % 25 == 0 )); then
             ELAPSED=$(($(date +%s) - START_TIME))
             RATE=$(echo "scale=2; $CURRENT / $ELAPSED" | bc 2>/dev/null || echo "?")
             REMAINING=$((ARCHIVE_COUNT - CURRENT))
             if [[ "$RATE" != "?" ]] && (( $(echo "$RATE > 0" | bc -l) )); then
               ETA=$(echo "scale=0; $REMAINING / $RATE / 60" | bc 2>/dev/null || echo "?")
-              echo "   Progression: $CURRENT/$ARCHIVE_COUNT archives ($RATE/s, ETA: ${ETA}min)..."
-              log "INFO" "Progression: $CURRENT/$ARCHIVE_COUNT archives traitées"
+              echo "   Progress: $CURRENT/$ARCHIVE_COUNT archives ($RATE/s, ETA: ${ETA}min)..."
+              log "INFO" "Progress: $CURRENT/$ARCHIVE_COUNT archives processed"
             else
-              echo "   Progression: $CURRENT/$ARCHIVE_COUNT archives traitées..."
+              echo "   Progress: $CURRENT/$ARCHIVE_COUNT archives processed..."
             fi
           fi
 
-          # Tentatives avec retry
+          # Retries with retry
           RETRY_COUNT=0
           SUCCESS=false
 
@@ -223,107 +223,107 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
               SUCCESS=true
               SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
 
-              # Supprimer l'archive du fichier de travail
+              # Remove archive from working file
               TEMP_JSON=$(mktemp)
               jq --arg id "$ID" '.ArchiveList = [.ArchiveList[] | select(.ArchiveId != $id)]' "$ACTIVE_INVENTORY" > "$TEMP_JSON"
               mv "$TEMP_JSON" "$ACTIVE_INVENTORY"
 
-              # Sauvegarder la progression
+              # Save progress
               echo "$SUCCESS_COUNT" > "$PROGRESS_FILE"
             else
               RETRY_COUNT=$((RETRY_COUNT + 1))
               if [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; then
-                log "WARN" "Erreur sur archive ${ID:0:20}..., tentative $((RETRY_COUNT + 1))/$MAX_RETRIES"
-                echo "   ⚠️  Erreur sur archive ${ID:0:20}..., tentative $((RETRY_COUNT + 1))/$MAX_RETRIES"
+                log "WARN" "Error on archive ${ID:0:20}..., attempt $((RETRY_COUNT + 1))/$MAX_RETRIES"
+                echo "   ⚠️  Error on archive ${ID:0:20}..., attempt $((RETRY_COUNT + 1))/$MAX_RETRIES"
                 sleep 2
               fi
             fi
           done
 
           if [[ "$SUCCESS" == false ]]; then
-            log "ERROR" "Échec définitif de suppression : ${ID:0:40}"
-            echo "   ❌ Échec définitif: ${ID:0:20}..."
+            log "ERROR" "Definitive deletion failure: ${ID:0:40}"
+            echo "   ❌ Definitive failure: ${ID:0:20}..."
             FAILED_COUNT=$((FAILED_COUNT + 1))
           fi
 
-          # Pause pour éviter le rate limiting
+          # Pause to avoid rate limiting
           #sleep "$DELAY_BETWEEN_DELETES"
         done < <(jq -r '.ArchiveList[].ArchiveId' "$ACTIVE_INVENTORY")
 
-        log "INFO" "Suppression terminée pour $VAULT : $SUCCESS_COUNT réussies, $FAILED_COUNT échouées"
-        echo "✅ Suppression terminée : $SUCCESS_COUNT réussies, $FAILED_COUNT échouées"
+        log "INFO" "Deletion completed for $VAULT : $SUCCESS_COUNT successful, $FAILED_COUNT failed"
+        echo "✅ Deletion completed: $SUCCESS_COUNT successful, $FAILED_COUNT failed"
 
         if [[ $FAILED_COUNT -gt 0 ]]; then
-          log "WARN" "Des archives n'ont pas pu être supprimées dans $VAULT"
-          echo "⚠️  Des archives n'ont pas pu être supprimées, le vault ne pourra pas être supprimé"
-          echo "💡 Vous pouvez relancer le script pour réessayer uniquement les archives restantes"
+          log "WARN" "Some archives could not be deleted in $VAULT"
+          echo "⚠️  Some archives could not be deleted, vault cannot be deleted"
+          echo "💡 You can rerun the script to retry only remaining archives"
           VAULTS_FAILED=$((VAULTS_FAILED + 1))
           continue
         else
-          # Tout s'est bien passé, nettoyer les fichiers de progression
-          log "INFO" "Toutes les archives de $VAULT ont été supprimées avec succès"
+          # All went well, cleaning progress files
+          log "INFO" "All archives from .* have been successfully deleted"
           rm -f "$WORKING_INVENTORY" "$PROGRESS_FILE"
         fi
       fi
     fi
   fi
 
-  # Suppression du vault
+  # Vault deletion
   if $DRY_RUN; then
-    log "INFO" "DRY RUN : simulation de suppression du vault $VAULT"
+    log "INFO" "DRY RUN : simulating vault deletion $VAULT"
     echo "🚫 DRY RUN → suppression simulée du vault $VAULT"
     VAULTS_DELETED=$((VAULTS_DELETED + 1))
   else
-    log "INFO" "Tentative de suppression du vault $VAULT"
-    echo "🧹 Suppression du vault vide : $VAULT"
-    echo "   ⚠️  Note : La suppression peut échouer si le vault a été modifié il y a moins de 24h"
+    log "INFO" "Attempting to delete vault $VAULT"
+    echo "🧹 Deleting empty vault: $VAULT"
+    echo "   ⚠️  Note: Deletion may fail if vault was modified less than 24h ago"
 
     if aws glacier delete-vault \
       --account-id "$ACCOUNT_ID" \
       --vault-name "$VAULT" \
       --region "$REGION" 2>/dev/null; then
-      log "INFO" "Vault supprimé avec succès : $VAULT"
-      echo "✅ Vault supprimé : $VAULT"
+      log "INFO" "Vault successfully deleted: $VAULT"
+      echo "✅ Vault deleted: $VAULT"
       VAULTS_DELETED=$((VAULTS_DELETED + 1))
 
-      # Nettoyer les fichiers associés
+      # Clean associated files
       rm -f "$INVENTORY_FILE" "$WORKING_INVENTORY" "$PROGRESS_FILE" "$JOBS_DIR/job_${VAULT}.json"
-      log "INFO" "Fichiers temporaires nettoyés pour $VAULT"
+      log "INFO" "Temporary files cleaned for $VAULT"
     else
-      log "ERROR" "Échec de suppression du vault $VAULT"
-      echo "❌ Échec de suppression du vault $VAULT"
-      echo "   Raisons possibles :"
-      echo "   - Le vault contient encore des archives"
-      echo "   - Le vault a été modifié il y a moins de 24h"
-      echo "   - Permissions AWS insuffisantes"
+      log "ERROR" "Failed to delete vault $VAULT"
+      echo "❌ Failed to delete vault $VAULT"
+      echo "   Possible reasons:"
+      echo "   - Vault still contains archives"
+      echo "   - Vault was modified less than 24h ago"
+      echo "   - Insufficient AWS permissions"
       echo ""
-      echo "💡 Pour réessayer plus tard : ./delete_glacier_auto.sh --vaults-only"
+      echo "💡 To retry later: ./delete_glacier_auto.sh --vaults-only"
       VAULTS_FAILED=$((VAULTS_FAILED + 1))
     fi
   fi
 done
 
 echo ""
-log "INFO" "=== Résumé final ==="
+log "INFO" "=== Final summary ==="
 echo "=============================="
-echo "📊 RÉSUMÉ FINAL"
+echo "📊 FINAL SUMMARY"
 echo "=============================="
-echo "Total de vaults traités : $TOTAL_VAULTS"
-echo "✅ Vaults supprimés : $VAULTS_DELETED"
-echo "❌ Échecs : $VAULTS_FAILED"
+echo "Total vaults processed: $TOTAL_VAULTS"
+echo "✅ Vaults deleted: $VAULTS_DELETED"
+echo "❌ Failures: $VAULTS_FAILED"
 echo ""
 
-log "INFO" "Total: $TOTAL_VAULTS vaults, Supprimés: $VAULTS_DELETED, Échecs: $VAULTS_FAILED"
+log "INFO" "Total: $TOTAL_VAULTS vaults, Deleted: $VAULTS_DELETED, Failures: $VAULTS_FAILED"
 
 if [[ $VAULTS_FAILED -gt 0 ]] && [[ "$DRY_RUN" == false ]]; then
-  log "WARN" "Certains vaults n'ont pas pu être supprimés"
-  echo "⚠️  Certains vaults n'ont pas pu être supprimés."
-  echo "   Attendez 24h puis relancez : ./delete_glacier_auto.sh --vaults-only"
+  log "WARN" "Some vaults could not be deleted"
+  echo "⚠️  Some vaults could not be deleted."
+  echo "   Wait 24h then rerun: ./delete_glacier_auto.sh --vaults-only"
 fi
 
-log "INFO" "=== Script terminé avec succès ==="
-log "INFO" "Log complet disponible dans : $LOG_FILE"
-echo "🎉 Script terminé."
+log "INFO" "=== Script completed successfully ==="
+log "INFO" "Full log available in: $LOG_FILE"
+echo "🎉 Script completed."
 echo ""
-echo "📄 Log complet : $LOG_FILE"
+echo "📄 Full log: $LOG_FILE"
 

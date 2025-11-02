@@ -1,0 +1,68 @@
+# AWS Glacier Dashboard - Git Ignore
+
+# Data directory (contains AWS data, logs, inventories)
+data/
+!data/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+
+# AWS credentials (should be in ~/.aws/)
+*.pem
+*.key
+credentials
+
+# Logs
+*.log
+glacier_logs/
+*.log.*
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Docker volumes (data is mounted, not stored in image)
+docker/volumes/
+
+# Inventory and job data
+glacier_inventory/
+job_*.json
+!job_example.json
+
+# Working files
+*.working.json
+.progress_*
+
+# OS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# Backups
+**/*.backup

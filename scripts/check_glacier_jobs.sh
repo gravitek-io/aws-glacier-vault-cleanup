@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Déterminer le répertoire racine du projet
+# Determine project root directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 DATA_DIR="$ROOT_DIR/data"
 
-ACCOUNT_ID="-"               # Ton ID de compte (ou "-")
-REGION="eu-west-1"           # Adapte selon ta région
+ACCOUNT_ID="-"               # Your account ID (or "-")
+REGION="eu-west-1"           # Adapt to your region
 JOBS_DIR="$DATA_DIR"
 
-echo "🔍 Vérification de l'état des jobs d'inventaire Glacier"
+echo "🔍 Checking inventory jobs status"
 echo "========================================================"
 
 TOTAL_JOBS=0
@@ -27,7 +27,7 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
   JOB_ID=$(jq -r '.jobId' "$JOB_FILE")
 
   if [[ -z "$VAULT" || -z "$JOB_ID" || "$VAULT" == "null" ]]; then
-    echo "⚠️  Impossible d'extraire vault/jobId depuis $JOB_FILE"
+    echo "⚠️  Cannot extract vault/jobId from $JOB_FILE"
     continue
   fi
 
@@ -35,7 +35,7 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
   echo "📦 Vault : $VAULT"
   echo "   Job ID : $JOB_ID"
 
-  # Récupérer le statut du job
+  # Get job status
   JOB_STATUS=$(aws glacier describe-job \
     --account-id "$ACCOUNT_ID" \
     --vault-name "$VAULT" \
@@ -48,36 +48,36 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
 
   if [[ "$COMPLETED" == "true" ]]; then
     if [[ "$STATUS_CODE" == "Succeeded" ]]; then
-      echo "   ✅ Statut : Terminé avec succès"
+      echo "   ✅ Status: Completed successfully"
       COMPLETED_JOBS=$((COMPLETED_JOBS + 1))
     else
-      echo "   ❌ Statut : Terminé avec erreur ($STATUS_CODE)"
-      echo "   Message : $STATUS_MESSAGE"
+      echo "   ❌ Status: Completed with error ($STATUS_CODE)"
+      echo "   Message: $STATUS_MESSAGE"
       FAILED_JOBS=$((FAILED_JOBS + 1))
     fi
   else
-    echo "   ⏳ Statut : En cours ($STATUS_CODE)"
-    echo "   Message : $STATUS_MESSAGE"
+    echo "   ⏳ Status: In Progress ($STATUS_CODE)"
+    echo "   Message: $STATUS_MESSAGE"
     IN_PROGRESS_JOBS=$((IN_PROGRESS_JOBS + 1))
   fi
 done
 
 echo ""
 echo "=============================="
-echo "📊 RÉSUMÉ"
+echo "📊 SUMMARY"
 echo "=============================="
-echo "Total de jobs : $TOTAL_JOBS"
-echo "✅ Terminés : $COMPLETED_JOBS"
-echo "⏳ En cours : $IN_PROGRESS_JOBS"
-echo "❌ Échoués : $FAILED_JOBS"
+echo "Total jobs: $TOTAL_JOBS"
+echo "✅ Completed: $COMPLETED_JOBS"
+echo "⏳ In Progress : $IN_PROGRESS_JOBS"
+echo "❌ Failed: $FAILED_JOBS"
 echo ""
 
 if [[ $COMPLETED_JOBS -eq $TOTAL_JOBS ]] && [[ $TOTAL_JOBS -gt 0 ]]; then
-  echo "🎉 Tous les jobs sont terminés !"
-  echo "   Vous pouvez maintenant exécuter : ./delete_glacier_auto.sh"
+  echo "🎉 All jobs are completed!"
+  echo "   You can now run: ./delete_glacier_auto.sh"
 elif [[ $IN_PROGRESS_JOBS -gt 0 ]]; then
-  echo "⏳ Certains jobs sont encore en cours. Veuillez patienter."
-  echo "   Les jobs d'inventaire prennent généralement 3-5 heures."
+  echo "⏳ Some jobs are still running. Please wait."
+  echo "   Inventory jobs usually take 3-5 hours."
 else
-  echo "⚠️  Vérifiez les jobs échoués avant de continuer."
+  echo "⚠️  Check failed jobs before continuing."
 fi

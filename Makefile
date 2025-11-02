@@ -1,23 +1,23 @@
 .PHONY: help build start stop restart logs shell clean status exec
 
 help:
-	@echo "🐳 Glacier Manager - Commandes disponibles"
+	@echo "🐳 Glacier Manager - Available Commands"
 	@echo ""
-	@echo "  make build      - Construire l'image Docker"
-	@echo "  make start      - Démarrer le container"
-	@echo "  make stop       - Arrêter le container"
-	@echo "  make restart    - Redémarrer le container"
-	@echo "  make logs       - Afficher les logs en temps réel"
-	@echo "  make shell      - Ouvrir un shell dans le container"
-	@echo "  make status     - Afficher l'état du container"
-	@echo "  make clean      - Supprimer le container et l'image"
+	@echo "  make build      - Build Docker image"
+	@echo "  make start      - Start container"
+	@echo "  make stop       - Stop container"
+	@echo "  make restart    - Restart container"
+	@echo "  make logs       - Show real-time logs"
+	@echo "  make shell      - Open shell in container"
+	@echo "  make status     - Show container status"
+	@echo "  make clean      - Remove container and image"
 	@echo ""
-	@echo "  make exec CMD='./check_glacier_jobs.sh'  - Exécuter une commande"
+	@echo "  make exec CMD='./check_glacier_jobs.sh'  - Execute a command"
 	@echo ""
 	@echo "Dashboard : http://localhost:8080"
 
 build:
-	@echo "🔨 Construction de l'image Docker..."
+	@echo "🔨 Building Docker image..."
 	cd docker && docker compose build
 
 start:
@@ -29,23 +29,23 @@ stop:
 restart: stop start
 
 logs:
-	@echo "📋 Logs en temps réel (Ctrl+C pour quitter)..."
+	@echo "📋 Real-time logs (Ctrl+C to quit)..."
 	@cd docker && docker compose logs -f
 
 shell:
 	@./scripts/docker-shell.sh
 
 status:
-	@echo "📊 État du container :"
+	@echo "📊 Container status:"
 	@cd docker && docker compose ps
 	@echo ""
 	@echo "🌐 Dashboard : http://localhost:8080"
 
 clean:
-	@echo "🧹 Nettoyage..."
+	@echo "🧹 Cleaning..."
 	@cd docker && docker compose down -v
 	@docker rmi glacier-manager:latest 2>/dev/null || true
-	@echo "✅ Nettoyage terminé"
+	@echo "✅ Cleaning completed"
 
 exec:
 	@cd docker && docker compose exec glacier-dashboard $(CMD)
@@ -60,14 +60,14 @@ check:
 	@cd docker && docker compose exec glacier-dashboard ./scripts/check_glacier_jobs.sh
 
 delete-dry:
-	@echo "🧪 Suppression en mode dry-run..."
+	@echo "🧪 Deletion in dry-run mode..."
 	@cd docker && docker compose exec glacier-dashboard ./scripts/delete_glacier_auto.sh --dry-run
 
 delete:
-	@echo "⚠️  ATTENTION : Suppression RÉELLE des archives"
-	@read -p "Êtes-vous sûr ? (yes/no) : " confirm && [ "$$confirm" = "yes" ]
+	@echo "⚠️  WARNING: REAL deletion of archives"
+	@read -p "Are you sure ? (yes/no) : " confirm && [ "$$confirm" = "yes" ]
 	@cd docker && docker compose exec glacier-dashboard ./scripts/delete_glacier_auto.sh
 
 vaults-only:
-	@echo "📦 Suppression des vaults vides..."
+	@echo "📦 Deleting empty vaults..."
 	@cd docker && docker compose exec glacier-dashboard ./scripts/delete_glacier_auto.sh --vaults-only
