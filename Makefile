@@ -18,56 +18,56 @@ help:
 
 build:
 	@echo "🔨 Construction de l'image Docker..."
-	docker compose build
+	cd docker && docker compose build
 
 start:
-	@./docker-start.sh
+	@./scripts/docker-start.sh
 
 stop:
-	@./docker-stop.sh
+	@./scripts/docker-stop.sh
 
 restart: stop start
 
 logs:
 	@echo "📋 Logs en temps réel (Ctrl+C pour quitter)..."
-	@docker compose logs -f
+	@cd docker && docker compose logs -f
 
 shell:
-	@./docker-shell.sh
+	@./scripts/docker-shell.sh
 
 status:
 	@echo "📊 État du container :"
-	@docker compose ps
+	@cd docker && docker compose ps
 	@echo ""
 	@echo "🌐 Dashboard : http://localhost:8080"
 
 clean:
 	@echo "🧹 Nettoyage..."
-	@docker compose down -v
+	@cd docker && docker compose down -v
 	@docker rmi glacier-manager:latest 2>/dev/null || true
 	@echo "✅ Nettoyage terminé"
 
 exec:
-	@docker compose exec glacier-dashboard $(CMD)
+	@cd docker && docker compose exec glacier-dashboard $(CMD)
 
 # Raccourcis pour les scripts communs
 init:
 	@echo "🚀 Lancement des jobs d'inventaire..."
-	@docker compose exec glacier-dashboard ./init_glacier_inventory.sh
+	@cd docker && docker compose exec glacier-dashboard ./scripts/init_glacier_inventory.sh
 
 check:
 	@echo "🔍 Vérification de l'état des jobs..."
-	@docker compose exec glacier-dashboard ./check_glacier_jobs.sh
+	@cd docker && docker compose exec glacier-dashboard ./scripts/check_glacier_jobs.sh
 
 delete-dry:
 	@echo "🧪 Suppression en mode dry-run..."
-	@docker compose exec glacier-dashboard ./delete_glacier_auto.sh --dry-run
+	@cd docker && docker compose exec glacier-dashboard ./scripts/delete_glacier_auto.sh --dry-run
 
 delete:
 	@echo "⚠️  ATTENTION : Suppression RÉELLE des archives"
 	@read -p "Êtes-vous sûr ? (yes/no) : " confirm && [ "$$confirm" = "yes" ]
-	@docker compose exec glacier-dashboard ./delete_glacier_auto.sh
+	@cd docker && docker compose exec glacier-dashboard ./scripts/delete_glacier_auto.sh
 
 vaults-only:
 	@echo "📦 Suppression des vaults vides..."
-	@docker compose exec glacier-dashboard ./delete_glacier_auto.sh --vaults-only
+	@cd docker && docker compose exec glacier-dashboard ./scripts/delete_glacier_auto.sh --vaults-only

@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Déterminer le répertoire racine du projet
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+DOCKER_DIR="$ROOT_DIR/docker"
+DATA_DIR="$ROOT_DIR/data"
+
 echo "🐳 Glacier Manager - Docker Edition"
 echo "===================================="
 echo ""
@@ -19,7 +25,7 @@ if ! docker compose version &> /dev/null && ! docker-compose --version &> /dev/n
 fi
 
 # Créer les répertoires nécessaires s'ils n'existent pas
-mkdir -p glacier_inventory glacier_logs job_data
+mkdir -p "$DATA_DIR/glacier_inventory" "$DATA_DIR/glacier_logs" "$DATA_DIR/job_data"
 
 # Vérifier les credentials AWS
 if [[ ! -d "$HOME/.aws" ]]; then
@@ -33,6 +39,7 @@ if [[ ! -d "$HOME/.aws" ]]; then
 fi
 
 echo "🔨 Construction de l'image Docker (peut prendre quelques minutes)..."
+cd "$DOCKER_DIR"
 docker compose build
 
 echo ""
@@ -45,14 +52,19 @@ echo ""
 echo "📊 Dashboard disponible à : http://localhost:8080"
 echo ""
 echo "Commandes utiles :"
-echo "  docker compose logs -f              # Voir les logs en temps réel"
-echo "  docker compose ps                   # État du container"
-echo "  docker compose exec glacier-dashboard bash  # Ouvrir un shell dans le container"
-echo "  docker compose down                 # Arrêter le container"
-echo "  ./docker-stop.sh                    # Script d'arrêt"
+echo "  cd docker && docker compose logs -f              # Voir les logs en temps réel"
+echo "  cd docker && docker compose ps                   # État du container"
+echo "  cd docker && docker compose exec glacier-dashboard bash  # Ouvrir un shell"
+echo "  cd docker && docker compose down                 # Arrêter le container"
+echo "  make stop                            # Script d'arrêt"
 echo ""
 echo "Pour exécuter un script dans le container :"
-echo "  docker compose exec glacier-dashboard ./init_glacier_inventory.sh"
-echo "  docker compose exec glacier-dashboard ./check_glacier_jobs.sh"
-echo "  docker compose exec glacier-dashboard ./delete_glacier_auto.sh --dry-run"
+echo "  cd docker && docker compose exec glacier-dashboard ./scripts/init_glacier_inventory.sh"
+echo "  cd docker && docker compose exec glacier-dashboard ./scripts/check_glacier_jobs.sh"
+echo "  cd docker && docker compose exec glacier-dashboard ./scripts/delete_glacier_auto.sh --dry-run"
+echo ""
+echo "Ou utilisez les raccourcis Makefile :"
+echo "  make init        # Lancer les jobs d'inventaire"
+echo "  make check       # Vérifier l'état des jobs"
+echo "  make delete-dry  # Suppression en mode dry-run"
 echo ""

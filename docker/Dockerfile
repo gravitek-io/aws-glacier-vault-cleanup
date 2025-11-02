@@ -32,18 +32,17 @@ RUN useradd -m -u 1000 glacier && \
 # Définir le répertoire de travail
 WORKDIR /home/glacier/app
 
-# Copier les fichiers de l'application
-COPY --chown=glacier:glacier *.sh ./
-COPY --chown=glacier:glacier *.py ./
-COPY --chown=glacier:glacier *.html ./
-COPY --chown=glacier:glacier glacier.json ./
+# Copier la structure du projet
+COPY --chown=glacier:glacier scripts/ ./scripts/
+COPY --chown=glacier:glacier web/ ./web/
+COPY --chown=glacier:glacier data/glacier.json ./data/glacier.json
 
 # Rendre les scripts exécutables
-RUN chmod +x *.sh *.py
+RUN chmod +x scripts/*.sh web/*.py
 
-# Créer les répertoires nécessaires
-RUN mkdir -p glacier_inventory glacier_logs && \
-    chown -R glacier:glacier glacier_inventory glacier_logs
+# Créer les répertoires nécessaires pour les données
+RUN mkdir -p data/glacier_inventory data/glacier_logs data/job_data && \
+    chown -R glacier:glacier data/
 
 # Passer à l'utilisateur non-root
 USER glacier
@@ -56,4 +55,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/api/status || exit 1
 
 # Point d'entrée par défaut : lancer le dashboard
-CMD ["python3", "dashboard_server.py"]
+CMD ["python3", "web/dashboard_server.py"]

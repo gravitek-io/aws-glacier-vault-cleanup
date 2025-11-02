@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Déterminer le répertoire racine du projet
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+DATA_DIR="$ROOT_DIR/data"
+
 ACCOUNT_ID="-"               # Ton ID de compte (ou "-")
 REGION="eu-west-1"           # Adapte selon ta région
-JOBS_DIR="."                 # Dossier contenant les job*.json
-TMP_DIR="./glacier_inventory"
-LOG_DIR="./glacier_logs"
+JOBS_DIR="$DATA_DIR"         # Dossier contenant les job*.json
+TMP_DIR="$DATA_DIR/glacier_inventory"
+LOG_DIR="$DATA_DIR/glacier_logs"
 DELAY_BETWEEN_DELETES=0.2    # Délai en secondes pour éviter le rate limiting
 MAX_RETRIES=3                # Nombre de tentatives en cas d'erreur
 

@@ -18,9 +18,15 @@ from urllib.parse import parse_qs, urlparse
 
 PORT = int(os.environ.get('PORT', 8080))
 
-# Utiliser le répertoire de travail courant pour permettre le fonctionnement avec Docker volumes
-# Si lancé localement, assurez-vous d'être dans le bon répertoire
-CURRENT_DIR = os.getcwd()
+# Déterminer le répertoire racine du projet
+# Si lancé depuis web/, remonter d'un niveau
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(SCRIPT_DIR) if os.path.basename(SCRIPT_DIR) == 'web' else SCRIPT_DIR
+
+# Répertoires du projet
+DATA_DIR = os.path.join(ROOT_DIR, "data")
+SCRIPTS_DIR = os.path.join(ROOT_DIR, "scripts")
+WEB_DIR = os.path.join(ROOT_DIR, "web")
 
 # Processus en cours d'exécution
 running_processes = {}
@@ -37,14 +43,14 @@ def get_vault_status():
     }
 
     # Lire glacier.json
-    glacier_file = os.path.join(CURRENT_DIR, "glacier.json")
+    glacier_file = os.path.join(DATA_DIR, "glacier.json")
     if os.path.exists(glacier_file):
         with open(glacier_file, 'r') as f:
             glacier_data = json.load(f)
             status["vaults"] = glacier_data.get("VaultList", [])
 
     # Lire les jobs
-    job_files = glob.glob(os.path.join(CURRENT_DIR, "job_*.json"))
+    job_files = glob.glob(os.path.join(DATA_DIR, "job_*.json"))
     for job_file in job_files:
         try:
             with open(job_file, 'r') as f:
@@ -63,7 +69,7 @@ def get_vault_status():
             print(f"Erreur lecture job {job_file}: {e}")
 
     # Lire la progression des suppressions
-    inventory_dir = os.path.join(CURRENT_DIR, "glacier_inventory")
+    inventory_dir = os.path.join(DATA_DIR, "glacier_inventory")
     if os.path.exists(inventory_dir):
         for working_file in glob.glob(os.path.join(inventory_dir, "*.working.json")):
             vault_name = os.path.basename(working_file).replace("inventory_", "").replace(".working.json", "")
@@ -93,7 +99,7 @@ def get_vault_status():
                 print(f"Erreur lecture progression {working_file}: {e}")
 
     # Lire les derniers logs
-    log_dir = os.path.join(CURRENT_DIR, "glacier_logs")
+    log_dir = os.path.join(DATA_DIR, "glacier_logs")
     if os.path.exists(log_dir):
         log_files = sorted(glob.glob(os.path.join(log_dir, "deletion_*.log")), reverse=True)
         if log_files:
@@ -141,7 +147,7 @@ def check_job_status(vault_name, job_id):
 
 def run_script_async(script_name, args=None):
     """Lance un script bash en arrière-plan"""
-    script_path = os.path.join(CURRENT_DIR, script_name)
+    script_path = os.path.join(SCRIPTS_DIR, script_name)
 
     if not os.path.exists(script_path):
         return {"success": False, "error": f"Script {script_name} introuvable"}
@@ -161,7 +167,7 @@ def run_script_async(script_name, args=None):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                cwd=CURRENT_DIR
+                cwd=ROOT_DIR  # Exécuter depuis la racine pour accès aux dossiers data/ et scripts/
             )
             running_processes[script_name] = process
 
@@ -188,7 +194,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
     """Handler personnalisé pour le dashboard"""
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=CURRENT_DIR, **kwargs)
+        super().__init__(*args, directory=WEB_DIR, **kwargs)
 
     def do_GET(self):
         """Gère les requêtes GET"""
@@ -211,7 +217,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-type', 'text/html; charset=utf-8')
             self.end_headers()
 
-            dashboard_html = os.path.join(CURRENT_DIR, "dashboard.html")
+            dashboard_html = os.path.join(WEB_DIR, "dashboard.html")
             if os.path.exists(dashboard_html):
                 with open(dashboard_html, 'rb') as f:
                     self.wfile.write(f.read())
@@ -277,7 +283,10 @@ def main():
     print("🚀 Dashboard AWS Glacier")
     print("=" * 60)
     print(f"Serveur démarré sur : http://localhost:{PORT}")
-    print(f"Répertoire de travail : {CURRENT_DIR}")
+    print(f"Répertoire racine : {ROOT_DIR}")
+    print(f"  - Data: {DATA_DIR}")
+    print(f"  - Scripts: {SCRIPTS_DIR}")
+    print(f"  - Web: {WEB_DIR}")
     print("")
     print("Ouvrez votre navigateur à l'adresse : http://localhost:8080")
     print("")

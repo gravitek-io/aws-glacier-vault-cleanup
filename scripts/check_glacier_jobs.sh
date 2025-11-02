@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Déterminer le répertoire racine du projet
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+DATA_DIR="$ROOT_DIR/data"
+
 ACCOUNT_ID="-"               # Ton ID de compte (ou "-")
 REGION="eu-west-1"           # Adapte selon ta région
-JOBS_DIR="."
+JOBS_DIR="$DATA_DIR"
 
 echo "🔍 Vérification de l'état des jobs d'inventaire Glacier"
 echo "========================================================"

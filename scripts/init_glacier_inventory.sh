@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Déterminer le répertoire racine du projet
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+DATA_DIR="$ROOT_DIR/data"
+
 ACCOUNT_ID="-"               # Ton ID de compte (ou "-")
 REGION="eu-west-1"           # Adapte selon ta région
-GLACIER_JSON="glacier.json"
-JOBS_DIR="."
+GLACIER_JSON="$DATA_DIR/glacier.json"
+JOBS_DIR="$DATA_DIR"
 
 echo "🚀 Initialisation des jobs d'inventaire Glacier"
 echo "================================================"

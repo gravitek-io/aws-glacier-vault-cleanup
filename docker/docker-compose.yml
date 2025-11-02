@@ -1,8 +1,8 @@
 services:
   glacier-dashboard:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: glacier-manager
     image: glacier-manager:latest
 
@@ -13,11 +13,11 @@ services:
       # Credentials AWS (lecture seule)
       - ~/.aws:/home/glacier/.aws:ro
 
-      # Monter le répertoire complet pour synchroniser tous les fichiers
+      # Monter le répertoire data pour synchroniser tous les fichiers
       # (job_*.json, inventaires, logs, etc.)
-      - ./:/home/glacier/data:rw
+      - ../data:/home/glacier/app/data:rw
 
-    working_dir: /home/glacier/data
+    working_dir: /home/glacier/app
 
     environment:
       # Configuration AWS (optionnel, peut aussi utiliser les credentials du volume)
