@@ -1,440 +1,440 @@
-# Gestion des Vaults AWS Glacier
+# AWS Glacier Vault Management
 
-Scripts pour automatiser la suppression complète des vaults AWS Glacier et de leurs archives.
+Scripts to automate the complete deletion of AWS Glacier vaults and their archives.
 
-## 📁 Fichiers du projet
+## 📁 Project Files
 
-### Scripts principaux
-- **glacier.json** : Liste des vaults Glacier à traiter (6 vaults)
-- **init_glacier_inventory.sh** : Lance les jobs d'inventaire pour tous les vaults
-- **check_glacier_jobs.sh** : Vérifie l'état d'avancement des jobs
-- **delete_glacier_auto.sh** : Supprime les archives et les vaults
+### Main Scripts
+- **glacier.json**: List of Glacier vaults to process (6 vaults)
+- **init_glacier_inventory.sh**: Launches inventory jobs for all vaults
+- **check_glacier_jobs.sh**: Checks the status of jobs
+- **delete_glacier_auto.sh**: Deletes archives and vaults
 
-### 🎨 Dashboard web
-- **dashboard_server.py** : Serveur web avec API REST
-- **dashboard.html** : Interface graphique interactive
-- **start_dashboard.sh** : Script de lancement du dashboard
+### 🎨 Web Dashboard
+- **dashboard_server.py**: Web server with REST API
+- **dashboard.html**: Interactive graphical interface
+- **start_dashboard.sh**: Dashboard launch script
 
-### 🐳 Docker (NOUVEAU)
-- **Dockerfile** : Image Docker avec tous les outils nécessaires
-- **docker-compose.yml** : Configuration Docker Compose
-- **docker-start.sh** : Script de démarrage Docker
-- **docker-stop.sh** : Script d'arrêt Docker
-- **docker-shell.sh** : Accès shell dans le container
-- **Makefile** : Commandes simplifiées
-- **.env.example** : Exemple de configuration
+### 🐳 Docker (NEW)
+- **Dockerfile**: Docker image with all necessary tools
+- **docker-compose.yml**: Docker Compose configuration
+- **docker-start.sh**: Docker startup script
+- **docker-stop.sh**: Docker stop script
+- **docker-shell.sh**: Shell access in the container
+- **Makefile**: Simplified commands
+- **.env.example**: Configuration example
 
-## 🐳 Déploiement Docker ⭐ NOUVEAU
+## 🐳 Docker Deployment ⭐ NEW
 
-**Solution conteneurisée complète - La méthode la plus simple pour démarrer !**
+**Complete containerized solution - The easiest way to get started!**
 
-### Pourquoi Docker ?
+### Why Docker?
 
-✅ **Portable** : Fonctionne partout (macOS, Linux, Windows)
-✅ **Isolé** : Pas de conflit avec votre système
-✅ **Pré-configuré** : AWS CLI, jq, Python déjà installés
-✅ **Persistant** : Vos données restent même après l'arrêt
-✅ **Simple** : Une seule commande pour tout lancer
+✅ **Portable**: Works everywhere (macOS, Linux, Windows)
+✅ **Isolated**: No conflicts with your system
+✅ **Pre-configured**: AWS CLI, jq, Python already installed
+✅ **Persistent**: Your data remains even after shutdown
+✅ **Simple**: One command to launch everything
 
-### Installation rapide
+### Quick Installation
 
 ```bash
-# 1. Vérifier que Docker est installé
+# 1. Check that Docker is installed
 docker --version
 
-# 2. Lancer tout avec Docker Compose
+# 2. Launch everything with Docker Compose
 ./docker-start.sh
 
-# 3. Ouvrir le dashboard
+# 3. Open the dashboard
 # http://localhost:8080
 ```
 
-C'est tout ! 🎉
+That's it! 🎉
 
-### Utilisation avec Docker
+### Using with Docker
 
-**Avec les scripts shell :**
+**With shell scripts:**
 ```bash
-# Démarrer
+# Start
 ./docker-start.sh
 
-# Arrêter
+# Stop
 ./docker-stop.sh
 
-# Voir les logs
+# View logs
 docker compose logs -f
 
-# Ouvrir un shell dans le container
+# Open a shell in the container
 ./docker-shell.sh
 ```
 
-**Avec Make (encore plus simple) :**
+**With Make (even simpler):**
 ```bash
-# Voir toutes les commandes
+# View all commands
 make help
 
-# Démarrer
+# Start
 make start
 
-# Voir les logs
+# View logs
 make logs
 
-# Lancer les jobs d'inventaire
+# Launch inventory jobs
 make init
 
-# Vérifier l'état
+# Check status
 make check
 
-# Suppression en dry-run
+# Deletion in dry-run mode
 make delete-dry
 
-# Arrêter
+# Stop
 make stop
 ```
 
-**Avec Docker Compose directement :**
+**With Docker Compose directly:**
 ```bash
-# Construire l'image
+# Build the image
 docker compose build
 
-# Démarrer
+# Start
 docker compose up -d
 
-# Logs en temps réel
+# Real-time logs
 docker compose logs -f
 
-# Exécuter un script dans le container
+# Execute a script in the container
 docker compose exec glacier-dashboard ./init_glacier_inventory.sh
 docker compose exec glacier-dashboard ./check_glacier_jobs.sh
 docker compose exec glacier-dashboard ./delete_glacier_auto.sh --dry-run
 
-# Arrêter
+# Stop
 docker compose down
 ```
 
-### Configuration Docker
+### Docker Configuration
 
-**Volumes montés :**
-- `~/.aws` → Credentials AWS (lecture seule)
-- `./glacier_inventory` → Inventaires téléchargés
-- `./glacier_logs` → Logs persistants
-- `./job_data` → Fichiers de jobs
+**Mounted volumes:**
+- `~/.aws` → AWS credentials (read-only)
+- `./data/glacier_inventory` → Downloaded inventories
+- `./data/glacier_logs` → Persistent logs
+- `./data/job_data` → Job files
 
-**Ports exposés :**
-- `8080` → Dashboard web
+**Exposed ports:**
+- `8080` → Web dashboard
 
-**Variables d'environnement :**
-Créez un fichier `.env` à partir de `.env.example` :
+**Environment variables:**
+Create a `.env` file from `.env.example`:
 ```bash
 cp .env.example .env
-# Éditez .env si nécessaire
+# Edit .env if necessary
 ```
 
-### Workflow Docker complet
+### Complete Docker Workflow
 
 ```bash
-# 1. Première fois : construire et démarrer
+# 1. First time: build and start
 make start
 
-# 2. Ouvrir le navigateur
+# 2. Open browser
 # http://localhost:8080
 
-# 3. Utiliser le dashboard OU les commandes Make
+# 3. Use the dashboard OR Make commands
 
-# Option A : Via le dashboard web
-# - Cliquez sur les boutons dans l'interface
+# Option A: Via web dashboard
+# - Click buttons in the interface
 
-# Option B : Via Make
-make init           # Lancer les jobs d'inventaire
-make check          # Vérifier l'état
-make delete-dry     # Test en dry-run
-make delete         # Suppression réelle (demande confirmation)
+# Option B: Via Make
+make init           # Launch inventory jobs
+make check          # Check status
+make delete-dry     # Test in dry-run mode
+make delete         # Real deletion (asks for confirmation)
 
-# 4. Suivre les logs en temps réel
+# 4. Follow logs in real-time
 make logs
 
-# 5. Arrêter quand terminé
+# 5. Stop when finished
 make stop
 ```
 
-### Commandes Make disponibles
+### Available Make Commands
 
-| Commande | Description |
-|----------|-------------|
-| `make help` | Afficher l'aide |
-| `make build` | Construire l'image Docker |
-| `make start` | Démarrer le container |
-| `make stop` | Arrêter le container |
-| `make restart` | Redémarrer le container |
-| `make logs` | Voir les logs en temps réel |
-| `make shell` | Ouvrir un shell dans le container |
-| `make status` | Afficher l'état du container |
-| `make clean` | Supprimer container et image |
-| `make init` | Lancer les jobs d'inventaire |
-| `make check` | Vérifier l'état des jobs |
-| `make delete-dry` | Suppression en dry-run |
-| `make delete` | Suppression réelle |
-| `make vaults-only` | Supprimer uniquement les vaults |
+| Command | Description |
+|---------|-------------|
+| `make help` | Display help |
+| `make build` | Build Docker image |
+| `make start` | Start container |
+| `make stop` | Stop container |
+| `make restart` | Restart container |
+| `make logs` | View real-time logs |
+| `make shell` | Open shell in container |
+| `make status` | Display container status |
+| `make clean` | Remove container and image |
+| `make init` | Launch inventory jobs |
+| `make check` | Check job status |
+| `make delete-dry` | Deletion in dry-run mode |
+| `make delete` | Real deletion |
+| `make vaults-only` | Delete only vaults |
 
-### Avantages de la version Docker
+### Advantages of Docker Version
 
 | Local | Docker |
 |-------|--------|
-| Installer AWS CLI manuellement | ✅ Déjà inclus |
-| Installer jq manuellement | ✅ Déjà inclus |
-| Installer Python manuellement | ✅ Déjà inclus |
-| Gérer les dépendances | ✅ Tout pré-configuré |
-| Conflits de versions | ✅ Environnement isolé |
-| Portabilité limitée | ✅ Fonctionne partout |
+| Install AWS CLI manually | ✅ Already included |
+| Install jq manually | ✅ Already included |
+| Install Python manually | ✅ Already included |
+| Manage dependencies | ✅ All pre-configured |
+| Version conflicts | ✅ Isolated environment |
+| Limited portability | ✅ Works everywhere |
 
-## 🌐 Dashboard Web Interactif
+## 🌐 Interactive Web Dashboard
 
-**Interface graphique moderne pour gérer vos vaults Glacier depuis votre navigateur !**
+**Modern graphical interface to manage your Glacier vaults from your browser!**
 
-### Fonctionnalités du dashboard
+### Dashboard Features
 
-✨ **Monitoring en temps réel**
-- Visualisation de tous les vaults et leurs statistiques
-- Suivi de l'état des jobs d'inventaire
-- Barres de progression pour les suppressions en cours
-- Logs en direct avec coloration syntaxique
+✨ **Real-time monitoring**
+- Visualization of all vaults and their statistics
+- Tracking of inventory job status
+- Progress bars for ongoing deletions
+- Live logs with syntax highlighting
 
-🎮 **Contrôle interactif**
-- Lancer les scripts directement depuis l'interface
-- Boutons pour toutes les opérations (init, check, delete, etc.)
-- Confirmations de sécurité pour les opérations critiques
-- Suivi des processus en cours d'exécution
+🎮 **Interactive control**
+- Launch scripts directly from the interface
+- Buttons for all operations (init, check, delete, etc.)
+- Security confirmations for critical operations
+- Tracking of running processes
 
-📊 **Statistiques détaillées**
-- Nombre d'archives par vault
-- Taille totale des données
-- Progression en pourcentage avec compteurs
-- Historique des logs
+📊 **Detailed statistics**
+- Number of archives per vault
+- Total data size
+- Percentage progress with counters
+- Log history
 
-### Lancement du dashboard
+### Launching the Dashboard
 
 ```bash
-# Lancer le serveur web
+# Launch the web server
 ./start_dashboard.sh
 ```
 
-Puis ouvrez votre navigateur à l'adresse : **http://localhost:8080**
+Then open your browser at: **http://localhost:8080**
 
-**Sortie attendue :**
+**Expected output:**
 ```
 ============================================================
-🚀 Dashboard AWS Glacier
+🚀 AWS Glacier Dashboard
 ============================================================
-Serveur démarré sur : http://localhost:8080
-Répertoire de travail : /Users/remi/Desktop/Glacier
+Server started on: http://localhost:8080
+Working directory: /Users/remi/Desktop/Glacier
 
-Ouvrez votre navigateur à l'adresse : http://localhost:8080
+Open your browser at: http://localhost:8080
 
-Appuyez sur Ctrl+C pour arrêter le serveur
+Press Ctrl+C to stop the server
 ============================================================
 ```
 
-### Captures d'écran du dashboard
+### Dashboard Screenshots
 
-**Vue d'ensemble :**
-- 📦 **Section Vaults** : Liste de tous les vaults avec statistiques
-- ⏳ **Section Jobs** : État des jobs d'inventaire avec badges de statut
-- 🔥 **Section Progression** : Barres de progression animées pour les suppressions
-- 📋 **Section Logs** : Console avec logs en temps réel
-- ⚙️ **Section Contrôles** : Boutons pour lancer les scripts
+**Overview:**
+- 📦 **Vaults Section**: List of all vaults with statistics
+- ⏳ **Jobs Section**: Inventory job status with status badges
+- 🔥 **Progress Section**: Animated progress bars for deletions
+- 📋 **Logs Section**: Console with real-time logs
+- ⚙️ **Controls Section**: Buttons to launch scripts
 
-**Auto-refresh :**
-Le dashboard se rafraîchit automatiquement toutes les 5 secondes pour afficher l'état le plus récent.
+**Auto-refresh:**
+The dashboard automatically refreshes every 5 seconds to display the most recent status.
 
-### Utilisation du dashboard
+### Using the Dashboard
 
-1. **Lancer le serveur**
+1. **Launch the server**
    ```bash
    ./start_dashboard.sh
    ```
 
-2. **Ouvrir le navigateur** à http://localhost:8080
+2. **Open browser** at http://localhost:8080
 
-3. **Utiliser les contrôles**
-   - Cliquer sur "🚀 Lancer les jobs d'inventaire" pour démarrer
-   - Surveiller l'état dans la section "Jobs"
-   - Une fois prêt, lancer la suppression
-   - Suivre la progression en temps réel
+3. **Use controls**
+   - Click "🚀 Launch inventory jobs" to start
+   - Monitor status in "Jobs" section
+   - When ready, launch deletion
+   - Follow progress in real-time
 
-4. **Arrêter le serveur**
-   - Revenir au terminal
-   - Appuyer sur `Ctrl+C`
+4. **Stop the server**
+   - Return to terminal
+   - Press `Ctrl+C`
 
-## 🚀 Workflow complet
+## 🚀 Complete Workflow
 
-### Option A : Avec le Dashboard Web (Recommandé)
+### Option A: With Web Dashboard (Recommended)
 
-1. Lancer le dashboard : `./start_dashboard.sh`
-2. Ouvrir http://localhost:8080 dans votre navigateur
-3. Utiliser les boutons pour contrôler les opérations
-4. Surveiller la progression en temps réel
+1. Launch dashboard: `./start_dashboard.sh`
+2. Open http://localhost:8080 in your browser
+3. Use buttons to control operations
+4. Monitor progress in real-time
 
-### Option B : En ligne de commande
+### Option B: Command Line
 
-### Étape 1 : Lancer les jobs d'inventaire
+### Step 1: Launch Inventory Jobs
 
 ```bash
 ./init_glacier_inventory.sh
 ```
 
-**Ce script :**
-- Lit le fichier `glacier.json`
-- Extrait tous les vaults (my_vault_1, _4, _5 et leurs mappings)
-- Initie un job d'inventaire pour chaque vault
-- Sauvegarde les job IDs dans des fichiers `job_<vault>.json`
+**This script:**
+- Reads the `glacier.json` file
+- Extracts all vaults (my_vault_1, _4, _5 and their mappings)
+- Initiates an inventory job for each vault
+- Saves job IDs in `job_<vault>.json` files
 
-**Sortie attendue :**
+**Expected output:**
 ```
-🚀 Initialisation des jobs d'inventaire Glacier
-📋 Vaults trouvés :
+🚀 Initialization of Glacier inventory jobs
+📋 Vaults found:
   - my_vault_1
   - my_vault_1_mapping
   - my_vault_2
   - ...
-✅ Job lancé avec succès
-💾 Job sauvegardé dans : job_my_vault_1.json
+✅ Job launched successfully
+💾 Job saved in: job_my_vault_1.json
 ```
 
-### Étape 2 : Attendre et vérifier l'état des jobs
+### Step 2: Wait and Check Job Status
 
-⏳ **Les jobs d'inventaire Glacier prennent généralement 3-5 heures**
+⏳ **Glacier inventory jobs typically take 3-5 hours**
 
-Vérifier régulièrement l'état :
+Regularly check status:
 
 ```bash
 ./check_glacier_jobs.sh
 ```
 
-**Ce script :**
-- Lit tous les fichiers `job_*.json`
-- Interroge AWS pour connaître le statut de chaque job
-- Affiche un résumé global
+**This script:**
+- Reads all `job_*.json` files
+- Queries AWS for each job status
+- Displays a global summary
 
-**Sortie attendue :**
+**Expected output:**
 ```
-📦 Vault : my_vault_1
-   ✅ Statut : Terminé avec succès
+📦 Vault: my_vault_1
+   ✅ Status: Completed successfully
 
-📦 Vault : my_vault_2
-   ⏳ Statut : En cours (InProgress)
+📦 Vault: my_vault_2
+   ⏳ Status: In progress (InProgress)
 
-📊 RÉSUMÉ
-Total de jobs : 6
-✅ Terminés : 1
-⏳ En cours : 5
-❌ Échoués : 0
+📊 SUMMARY
+Total jobs: 6
+✅ Completed: 1
+⏳ In progress: 5
+❌ Failed: 0
 ```
 
-### Étape 3 : Supprimer les archives et vaults
+### Step 3: Delete Archives and Vaults
 
-Une fois tous les jobs terminés :
+Once all jobs are completed:
 
 ```bash
-# Mode dry-run (simulation, aucune suppression)
+# Dry-run mode (simulation, no deletion)
 ./delete_glacier_auto.sh --dry-run
 
-# Suppression réelle
+# Real deletion
 ./delete_glacier_auto.sh
 ```
 
-**Ce script :**
-- Vérifie automatiquement que les jobs sont terminés
-- Télécharge l'inventaire de chaque vault
-- Supprime toutes les archives avec retry automatique
-- Affiche la progression tous les 100 archives
-- Tente de supprimer les vaults vides
-- Affiche un résumé complet des opérations
+**This script:**
+- Automatically checks that jobs are completed
+- Downloads inventory for each vault
+- Deletes all archives with automatic retry
+- Displays progress every 25 archives
+- Attempts to delete empty vaults
+- Displays complete operation summary
 
-**Sortie attendue :**
+**Expected output:**
 ```
-📄 Fichier : job_my_vault_1.json
-➡️  Vault : my_vault_1
-🔍 Vérification du statut du job...
-✅ Job terminé avec succès
-📥 Téléchargement de l'inventaire...
-✅ Inventaire sauvegardé : ./glacier_inventory/inventory_my_vault_1.json
-🧨 64 archives trouvées dans le vault
-🧹 Suppression réelle des archives...
-✅ Suppression terminée : 64 réussies, 0 échouées
-🧹 Suppression du vault vide : my_vault_1
-   ⚠️  Note : La suppression peut échouer si le vault a été modifié il y a moins de 24h
-❌ Échec de suppression du vault my_vault_1
-   Raisons possibles :
-   - Le vault a été modifié il y a moins de 24h
+📄 File: job_my_vault_1.json
+➡️  Vault: my_vault_1
+🔍 Checking job status...
+✅ Job completed successfully
+📥 Downloading inventory...
+✅ Inventory saved: ./glacier_inventory/inventory_my_vault_1.json
+🧨 64 archives found in vault
+🧹 Real deletion of archives...
+✅ Deletion completed: 64 successful, 0 failed
+🧹 Deleting empty vault: my_vault_1
+   ⚠️  Note: Deletion may fail if vault was modified less than 24h ago
+❌ Failed to delete vault my_vault_1
+   Possible reasons:
+   - Vault was modified less than 24h ago
 
-📊 RÉSUMÉ FINAL
-Total de vaults traités : 6
-✅ Vaults supprimés : 0
-❌ Échecs : 6
+📊 FINAL SUMMARY
+Total vaults processed: 6
+✅ Vaults deleted: 0
+❌ Failures: 6
 
-⚠️  Certains vaults n'ont pas pu être supprimés.
-   Attendez 24h puis relancez : ./delete_glacier_auto.sh --vaults-only
+⚠️  Some vaults could not be deleted.
+   Wait 24h then rerun: ./delete_glacier_auto.sh --vaults-only
 ```
 
-### Étape 4 : Supprimer les vaults (24h après)
+### Step 4: Delete Vaults (24h later)
 
-⏰ **Attendre 24 heures après la suppression des archives**
+⏰ **Wait 24 hours after deleting archives**
 
-AWS Glacier impose une attente de ~24h après la dernière modification d'un vault avant de pouvoir le supprimer.
+AWS Glacier requires waiting ~24h after the last modification of a vault before it can be deleted.
 
 ```bash
-# Supprimer uniquement les vaults vides (sans retraiter les archives)
+# Delete only empty vaults (without reprocessing archives)
 ./delete_glacier_auto.sh --vaults-only
 ```
 
-**Sortie attendue :**
+**Expected output:**
 ```
-🗑️  MODE VAULTS ONLY : suppression uniquement des vaults vides
-📦 Vault : my_vault_1
-✅ Vault supprimé : my_vault_1
+🗑️  VAULTS ONLY MODE: delete only empty vaults
+📦 Vault: my_vault_1
+✅ Vault deleted: my_vault_1
 
-📊 RÉSUMÉ FINAL
-Total de vaults traités : 6
-✅ Vaults supprimés : 6
-❌ Échecs : 0
+📊 FINAL SUMMARY
+Total vaults processed: 6
+✅ Vaults deleted: 6
+❌ Failures: 0
 ```
 
 ## ⚙️ Configuration
 
-### Paramètres principaux
+### Main Parameters
 
-Les scripts utilisent les paramètres suivants (modifiables dans chaque script) :
+Scripts use the following parameters (modifiable in each script):
 
-- **ACCOUNT_ID** : `-` (utilise le compte AWS par défaut)
-- **REGION** : `eu-west-1` (région de vos vaults)
-- **GLACIER_JSON** : `glacier.json` (fichier source des vaults)
+- **ACCOUNT_ID**: `-` (uses default AWS account)
+- **REGION**: `eu-west-1` (region of your vaults)
+- **GLACIER_JSON**: `glacier.json` (vault source file)
 
-### Options avancées du script delete_glacier_auto.sh
+### Advanced Options for delete_glacier_auto.sh
 
-Paramètres configurables dans le script :
+Configurable parameters in the script:
 
-- **DELAY_BETWEEN_DELETES** : `0.5` secondes (pause entre chaque suppression d'archive)
-- **MAX_RETRIES** : `3` tentatives (nombre de retry en cas d'erreur AWS)
+- **DELAY_BETWEEN_DELETES**: `0.2` seconds (pause between each archive deletion)
+- **MAX_RETRIES**: `3` attempts (number of retries on AWS error)
 
-Options en ligne de commande :
+Command-line options:
 
 ```bash
-# Simulation sans suppression
+# Simulation without deletion
 ./delete_glacier_auto.sh --dry-run
 
-# Suppression uniquement des vaults vides (après 24h)
+# Delete only empty vaults (after 24h)
 ./delete_glacier_auto.sh --vaults-only
 
-# Combinaison des options
+# Combination of options
 ./delete_glacier_auto.sh --dry-run --vaults-only
 ```
 
-## 📊 Informations des vaults
+## 📊 Vault Information
 
-D'après `glacier.json`, voici les vaults à traiter :
+According to `glacier.json`, here are the vaults to process:
 
-| Vault | Archives | Taille | Dernière inventaire |
-|-------|----------|--------|---------------------|
+| Vault | Archives | Size | Last inventory |
+|-------|----------|------|----------------|
 | my_vault_1 | 64 | 10 GB | 2025-10-24 |
 | my_vault_1_mapping | 0 | 0 B | 2025-10-24 |
 | my_vault_2 | 10,000 | 100 GB | 2025-10-24 |
@@ -442,207 +442,216 @@ D'après `glacier.json`, voici les vaults à traiter :
 | my_vault_3 | 5,000 | 50 GB | 2023-12-22 |
 | my_vault_3_mapping | 1 | 20 MB | 2023-12-26 |
 
-**Total : ~160 GB de données**
+**Total: ~160 GB of data**
 
-## 🗂️ Fichiers générés
+## 🗂️ Generated Files
 
-Pendant l'exécution, les fichiers suivants seront créés :
+During execution, the following files will be created:
 
 ```
 .
-├── glacier.json                             # Configuration des vaults
-├── init_glacier_inventory.sh                # Script 1
-├── check_glacier_jobs.sh                    # Script 2
-├── delete_glacier_auto.sh                   # Script 3
-├── job_my_vault_*.json                   # Job IDs (créés par script 1)
-├── glacier_inventory/                       # Inventaires et progression
-│   ├── inventory_my_vault_*.json         # Inventaires téléchargés (originaux)
-│   ├── inventory_my_vault_*.working.json # Copies de travail (reprise)
-│   └── .progress_my_vault_*              # Fichiers de progression
-└── glacier_logs/                            # Logs persistants
-    └── deletion_YYYYMMDD_HHMMSS.log         # Log horodaté de chaque exécution
+├── data/
+│   ├── glacier.json                         # Vault configuration
+│   ├── job_data/                            # Job files
+│   │   └── job_my_vault_*.json           # Job IDs (created by script 1)
+│   ├── glacier_inventory/                   # Inventories and progress
+│   │   ├── inventory_my_vault_*.json     # Downloaded inventories (originals)
+│   │   ├── inventory_my_vault_*.working.json # Working copies (resume)
+│   │   └── .progress_my_vault_*          # Progress files
+│   └── glacier_logs/                        # Persistent logs
+│       └── deletion_YYYYMMDD_HHMMSS.log     # Timestamped log of each execution
+├── scripts/
+│   ├── init_glacier_inventory.sh            # Script 1
+│   ├── check_glacier_jobs.sh                # Script 2
+│   └── delete_glacier_auto.sh               # Script 3
+└── web/
+    ├── dashboard_server.py
+    └── dashboard.html
 ```
 
-**Note :** Les fichiers `.working.json` et `.progress_*` sont automatiquement nettoyés une fois le vault vidé.
+**Note:** `.working.json` and `.progress_*` files are automatically cleaned once the vault is emptied.
 
-## ⚠️ Avertissements
+## ⚠️ Warnings
 
-- La suppression des archives est **irréversible**
-- Utilisez `--dry-run` pour tester avant la suppression réelle
-- Les jobs d'inventaire prennent plusieurs heures (3-5h en moyenne)
-- AWS Glacier facture les suppressions anticipées (< 90 jours de stockage)
-- Assurez-vous d'avoir les permissions IAM nécessaires :
+- Archive deletion is **irreversible**
+- Use `--dry-run` to test before real deletion
+- Inventory jobs take several hours (3-5h on average)
+- AWS Glacier charges for early deletions (< 90 days of storage)
+- Make sure you have the necessary IAM permissions:
   - `glacier:InitiateJob`
   - `glacier:DescribeJob`
   - `glacier:GetJobOutput`
   - `glacier:DeleteArchive`
   - `glacier:DeleteVault`
 
-## 🔧 Prérequis
+## 🔧 Prerequisites
 
-### Pour les scripts CLI
-- AWS CLI installé et configuré
-- `jq` installé (pour le parsing JSON)
+### For CLI Scripts
+- AWS CLI installed and configured
+- `jq` installed (for JSON parsing)
 - Bash 4.0+
-- Credentials AWS configurées (`~/.aws/credentials` ou variables d'environnement)
+- AWS credentials configured (`~/.aws/credentials` or environment variables)
 
-### Pour le dashboard web (optionnel)
-- Python 3.6+ (généralement pré-installé sur macOS)
-- Navigateur web moderne (Chrome, Firefox, Safari, Edge)
+### For Web Dashboard (optional)
+- Python 3.6+ (usually pre-installed on macOS)
+- Modern web browser (Chrome, Firefox, Safari, Edge)
 
-**Vérifier les prérequis :**
+**Check prerequisites:**
 ```bash
-# Vérifier AWS CLI
+# Check AWS CLI
 aws --version
 
-# Vérifier jq
+# Check jq
 jq --version
 
-# Vérifier Python 3
+# Check Python 3
 python3 --version
 
-# Vérifier les credentials AWS
+# Check AWS credentials
 aws sts get-caller-identity
 ```
 
-## 🚀 Fonctionnalités avancées
+## 🚀 Advanced Features
 
-### 🔄 Reprise après interruption ⭐ NOUVEAU
+### 🔄 Resume After Interruption ⭐ NEW
 
-**Le script peut être interrompu et repris sans perdre de progression !**
+**The script can be interrupted and resumed without losing progress!**
 
-Fonctionnement :
-- Chaque archive supprimée est **immédiatement retirée** du fichier JSON de travail
-- En cas d'interruption (Ctrl+C, crash, perte de connexion), l'état est sauvegardé
-- Au redémarrage, le script **reprend exactement là où il s'est arrêté**
-- Seules les archives restantes sont traitées
+How it works:
+- Each deleted archive is **immediately removed** from the working JSON file
+- In case of interruption (Ctrl+C, crash, connection loss), state is saved
+- On restart, the script **resumes exactly where it left off**
+- Only remaining archives are processed
 
-**Exemple :**
+**Example:**
 ```bash
-# Lancement initial
+# Initial launch
 ./delete_glacier_auto.sh
 
-# Script interrompu après 10,000/10,000 archives
-# [Ctrl+C ou crash]
+# Script interrupted after 10,000/10,000 archives
+# [Ctrl+C or crash]
 
-# Reprise - seules les 8,766 archives restantes seront traitées
+# Resume - only the remaining 8,766 archives will be processed
 ./delete_glacier_auto.sh
-🔄 Reprise détectée : utilisation de l'inventaire de travail existant
-🔄 Reprise : 10000/10000 archives déjà supprimées
-🧨 8766 archives trouvées dans le vault
+🔄 Resume detected: using existing working inventory
+🔄 Resume: 10000/10000 archives already deleted
+🧨 8766 archives found in vault
 ```
 
-**Fichiers de reprise :**
-- `glacier_inventory/inventory_<vault>.working.json` : inventaire mis à jour en temps réel
-- `glacier_inventory/.progress_<vault>` : compteur de progression
+**Resume files:**
+- `glacier_inventory/inventory_<vault>.working.json`: inventory updated in real-time
+- `glacier_inventory/.progress_<vault>`: progress counter
 
-Ces fichiers sont automatiquement nettoyés une fois le vault complètement vidé.
+These files are automatically cleaned once the vault is completely emptied.
 
-### 📋 Logs persistants ⭐ NOUVEAU
+### 📋 Persistent Logs ⭐ NEW
 
-**Traçabilité complète de toutes les opérations**
+**Complete traceability of all operations**
 
-Le script génère un fichier de log horodaté pour chaque exécution :
-- Format : `glacier_logs/deletion_YYYYMMDD_HHMMSS.log`
-- Tous les événements sont loggés : démarrages, suppressions, erreurs, fins
-- Format structuré : `[timestamp] [level] message`
-- Niveaux : INFO, WARN, ERROR
+The script generates a timestamped log file for each execution:
+- Format: `glacier_logs/deletion_YYYYMMDD_HHMMSS.log`
+- All events are logged: starts, deletions, errors, completions
+- Structured format: `[timestamp] [level] message`
+- Levels: INFO, WARN, ERROR
 
-**Exemple de log :**
+**Log example:**
 ```
-[2025-11-02 14:30:15] [INFO] === Démarrage du script de suppression Glacier ===
-[2025-11-02 14:30:15] [INFO] Fichier de log : ./glacier_logs/deletion_20251102_143015.log
-[2025-11-02 14:30:16] [INFO] Traitement du vault : my_vault_2
-[2025-11-02 14:30:20] [INFO] 10000 archives restantes dans le vault my_vault_2
-[2025-11-02 14:30:25] [INFO] Progression: 100/10000 archives traitées
-[2025-11-02 15:45:30] [WARN] Script interrompu par l'utilisateur (Ctrl+C)
-[2025-11-02 15:45:30] [INFO] La progression a été sauvegardée. Relancez le script pour reprendre.
-```
-
-**Gestion de Ctrl+C :**
-Le script intercepte proprement les interruptions et sauvegarde l'état avant de quitter.
-
-### ✅ Vérification automatique des jobs
-
-Le script `delete_glacier_auto.sh` vérifie automatiquement que les jobs d'inventaire sont terminés avant de télécharger les données. Si un job n'est pas prêt, il passe au suivant.
-
-### 🔁 Système de retry
-
-En cas d'erreur de suppression (throttling AWS, erreurs réseau), le script réessaie automatiquement jusqu'à 3 fois avec une pause de 2 secondes entre chaque tentative.
-
-### 🛡️ Protection contre le rate limiting
-
-Le script ajoute une pause de 0.5 seconde entre chaque suppression d'archive pour éviter d'être throttled par AWS. Ce délai est particulièrement important pour le vault avec 10,000 archives.
-
-### 📊 Progression en temps réel avec ETA
-
-Pour les vaults contenant de nombreuses archives, le script affiche la progression tous les 100 archives avec estimation du temps restant :
-```
-Progression: 100/10000 archives (1.85/s, ETA: 89min)...
-Progression: 200/10000 archives (1.92/s, ETA: 85min)...
+[2025-11-02 14:30:15] [INFO] === Starting Glacier deletion script ===
+[2025-11-02 14:30:15] [INFO] Log file: ./glacier_logs/deletion_20251102_143015.log
+[2025-11-02 14:30:16] [INFO] Processing vault: my_vault_2
+[2025-11-02 14:30:20] [INFO] 10000 remaining archives in vault my_vault_2
+[2025-11-02 14:30:25] [INFO] Progress: 100/10000 archives processed
+[2025-11-02 15:45:30] [WARN] Script interrupted by user (Ctrl+C)
+[2025-11-02 15:45:30] [INFO] Progress has been saved. Rerun the script to resume.
 ```
 
-### 📈 Statistiques détaillées
+**Ctrl+C handling:**
+The script properly intercepts interruptions and saves state before exiting.
 
-À la fin de l'exécution, le script affiche :
-- Nombre total de vaults traités
-- Nombre de vaults supprimés avec succès
-- Nombre d'échecs
-- Pour chaque vault : nombre d'archives réussies vs échouées
-- Chemin vers le fichier de log complet
+### ✅ Automatic Job Verification
 
-### 🧹 Nettoyage automatique
+The `delete_glacier_auto.sh` script automatically checks that inventory jobs are completed before downloading data. If a job is not ready, it moves to the next one.
 
-Une fois un vault complètement supprimé, tous les fichiers temporaires sont automatiquement nettoyés :
+### 🔁 Retry System
+
+In case of deletion error (AWS throttling, network errors), the script automatically retries up to 3 times with a 2-second pause between each attempt.
+
+### 🛡️ Rate Limiting Protection
+
+The script adds a 0.2-second pause between each archive deletion to avoid being throttled by AWS. This delay is particularly important for the vault with 10,000 archives.
+
+### 📊 Real-time Progress with ETA
+
+For vaults containing many archives, the script displays progress every 25 archives with estimated time remaining:
+```
+Progress: 100/10000 archives (1.85/s, ETA: 89min)...
+Progress: 200/10000 archives (1.92/s, ETA: 85min)...
+```
+
+### 📈 Detailed Statistics
+
+At the end of execution, the script displays:
+- Total number of vaults processed
+- Number of successfully deleted vaults
+- Number of failures
+- For each vault: number of successful vs failed archives
+- Path to complete log file
+
+### 🧹 Automatic Cleanup
+
+Once a vault is completely deleted, all temporary files are automatically cleaned:
 - `job_<vault>.json`
 - `inventory_<vault>.json`
 - `inventory_<vault>.working.json`
 - `.progress_<vault>`
 
-### ✔️ Validation JSON
+### ✔️ JSON Validation
 
-Le script valide la structure JSON des inventaires avant de les traiter, évitant ainsi les erreurs silencieuses.
+The script validates the JSON structure of inventories before processing them, avoiding silent errors.
 
 ## 📝 Notes
 
-- Les vaults doivent être complètement vides avant de pouvoir être supprimés
-- Un vault ne peut être supprimé que 24h après la dernière opération d'écriture
-- Les inventaires Glacier sont mis à jour toutes les 24h environ
-- La suppression de ~355k archives peut prendre plusieurs heures (environ 1-2h avec les pauses anti-throttling)
-- **Le script peut être interrompu à tout moment** : la progression est sauvegardée automatiquement
-- Les logs sont conservés dans `./glacier_logs/` pour audit et debugging
-- Les inventaires téléchargés sont conservés dans `./glacier_inventory/` et réutilisés lors de l'exécution de `--vaults-only`
+- Vaults must be completely empty before they can be deleted
+- A vault can only be deleted 24h after the last write operation
+- Glacier inventories are updated approximately every 24h
+- Deleting ~355k archives can take several hours (about 1-2h with anti-throttling pauses)
+- **The script can be interrupted at any time**: progress is saved automatically
+- Logs are kept in `./glacier_logs/` for audit and debugging
+- Downloaded inventories are kept in `./glacier_inventory/` and reused when running `--vaults-only`
 
-## 🆘 Scénarios courants
+## 🆘 Common Scenarios
 
-### Le script plante ou je dois l'interrompre
+### The script crashes or I need to interrupt it
 
-**Pas de panique !** Relancez simplement le script :
+**Don't panic!** Simply relaunch the script:
 ```bash
 ./delete_glacier_auto.sh
 ```
-Il reprendra automatiquement là où il s'est arrêté.
+It will automatically resume where it left off.
 
-### Je veux voir ce qui s'est passé lors de l'exécution précédente
+### I want to see what happened during the previous execution
 
-Consultez le dernier fichier de log :
+Check the latest log file:
 ```bash
 ls -lt glacier_logs/
 cat glacier_logs/deletion_*.log
 ```
 
-### Le script est trop lent
+### The script is too slow
 
-Vous pouvez ajuster les paramètres dans le script :
-- `DELAY_BETWEEN_DELETES=0.5` → réduire à `0.2` (attention au throttling AWS)
-- `MAX_RETRIES=3` → réduire à `1` pour aller plus vite
+You can adjust parameters in the script:
+- `DELAY_BETWEEN_DELETES=0.2` → reduce to `0.1` (beware of AWS throttling)
+- `MAX_RETRIES=3` → reduce to `1` to go faster
 
-### Je veux nettoyer manuellement après des tests
+### I want to manually clean up after tests
 
 ```bash
-# Nettoyer les inventaires de travail
-rm -f glacier_inventory/*.working.json glacier_inventory/.progress_*
+# Clean working inventories
+rm -f data/glacier_inventory/*.working.json data/glacier_inventory/.progress_*
 
-# Nettoyer tous les logs
-rm -rf glacier_logs/
+# Clean all logs
+rm -rf data/glacier_logs/
+
+# Clean all job files
+rm -rf data/job_data/
 ```

@@ -8,7 +8,7 @@ DATA_DIR="$ROOT_DIR/data"
 
 ACCOUNT_ID="-"               # Your account ID (or "-")
 REGION="eu-west-1"           # Adapt to your region
-JOBS_DIR="$DATA_DIR"
+JOBS_DIR="$DATA_DIR/job_data"
 
 echo "🔍 Checking inventory jobs status"
 echo "========================================================"
@@ -37,10 +37,10 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
 
   # Get job status
   JOB_STATUS=$(aws glacier describe-job \
-    --account-id "$ACCOUNT_ID" \
-    --vault-name "$VAULT" \
-    --job-id "$JOB_ID" \
-    --region "$REGION")
+    --account-id="$ACCOUNT_ID" \
+    --vault-name="$VAULT" \
+    --job-id="$JOB_ID" \
+    --region="$REGION")
 
   COMPLETED=$(echo "$JOB_STATUS" | jq -r '.Completed')
   STATUS_CODE=$(echo "$JOB_STATUS" | jq -r '.StatusCode')

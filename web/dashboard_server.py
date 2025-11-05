@@ -50,7 +50,7 @@ def get_vault_status():
             status["vaults"] = glacier_data.get("VaultList", [])
 
     # Read jobs
-    job_files = glob.glob(os.path.join(DATA_DIR, "job_*.json"))
+    job_files = glob.glob(os.path.join(DATA_DIR, "job_data", "job_*.json"))
     for job_file in job_files:
         try:
             with open(job_file, 'r') as f:

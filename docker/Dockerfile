@@ -35,7 +35,6 @@ WORKDIR /home/glacier/app
 # Copier la structure du projet
 COPY --chown=glacier:glacier scripts/ ./scripts/
 COPY --chown=glacier:glacier web/ ./web/
-COPY --chown=glacier:glacier data/glacier.json ./data/glacier.json
 
 # Rendre les scripts exécutables
 RUN chmod +x scripts/*.sh web/*.py

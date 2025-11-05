@@ -8,11 +8,11 @@ DATA_DIR="$ROOT_DIR/data"
 
 ACCOUNT_ID="-"               # Ton ID de compte (ou "-")
 REGION="eu-west-1"           # Adapte selon ta région
-JOBS_DIR="$DATA_DIR"         # Folder containing job*.json
+JOBS_DIR="$DATA_DIR/job_data"         # Folder containing job*.json
 TMP_DIR="$DATA_DIR/glacier_inventory"
 LOG_DIR="$DATA_DIR/glacier_logs"
-DELAY_BETWEEN_DELETES=0.2    # Delay in seconds to avoid rate limiting
-MAX_RETRIES=3                # Number of retries in case of error
+DELAY_BETWEEN_DELETES=0.2    # Delay in seconds to avoid rate limiting (currently disabled)
+MAX_RETRIES=1                # Number of retries in case of error (reduced for speed)
 
 mkdir -p "$TMP_DIR" "$LOG_DIR"
 
@@ -101,10 +101,10 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
   if [[ ! -f "$INVENTORY_FILE" ]] && [[ "$VAULTS_ONLY" == false ]]; then
     echo "🔍 Vérification du statut du job..."
     JOB_STATUS=$(aws glacier describe-job \
-      --account-id "$ACCOUNT_ID" \
-      --vault-name "$VAULT" \
-      --job-id "$JOB_ID" \
-      --region "$REGION")
+      --account-id="$ACCOUNT_ID" \
+      --vault-name="$VAULT" \
+      --job-id="$JOB_ID" \
+      --region="$REGION")
 
     COMPLETED=$(echo "$JOB_STATUS" | jq -r '.Completed')
     STATUS_CODE=$(echo "$JOB_STATUS" | jq -r '.StatusCode')
@@ -122,11 +122,11 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
   if [[ ! -f "$INVENTORY_FILE" ]] && [[ "$VAULTS_ONLY" == false ]]; then
     echo "📥 Downloading inventory..."
     if aws glacier get-job-output \
-      --account-id "$ACCOUNT_ID" \
-      --vault-name "$VAULT" \
-      --job-id "$JOB_ID" \
+      --account-id="$ACCOUNT_ID" \
+      --vault-name="$VAULT" \
+      --job-id="$JOB_ID" \
       "$INVENTORY_FILE" \
-      --region "$REGION"; then
+      --region="$REGION"; then
       echo "✅ Inventory saved: $INVENTORY_FILE"
     else
       echo "❌ Failed to download inventory"
@@ -191,10 +191,11 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
         FAILED_COUNT=0
         CURRENT=0
         START_TIME=$(date +%s)
+        DELETED_IDS=()
 
         while IFS= read -r ID; do
           CURRENT=$((CURRENT + 1))
-          [[ -z "$ID" || "$ID" == "null" || "$ID" == -* ]] && continue
+          [[ -z "$ID" || "$ID" == "null" ]] && continue
 
           # Show progress every 25 archives
           if (( CURRENT % 25 == 0 )); then
@@ -215,40 +216,66 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
           SUCCESS=false
 
           while [[ $RETRY_COUNT -lt $MAX_RETRIES ]] && [[ "$SUCCESS" == false ]]; do
-            if aws glacier delete-archive \
-              --account-id "$ACCOUNT_ID" \
-              --vault-name "$VAULT" \
-              --region "$REGION" \
-              --archive-id "$ID" 2>/dev/null; then
+            ERROR_MSG=$(aws glacier delete-archive \
+              --account-id="$ACCOUNT_ID" \
+              --vault-name="$VAULT" \
+              --region="$REGION" \
+              --archive-id="$ID" 2>&1)
+            EXIT_CODE=$?
+            if [[ $EXIT_CODE -eq 0 ]]; then
               SUCCESS=true
               SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
 
-              # Remove archive from working file
-              TEMP_JSON=$(mktemp)
-              jq --arg id "$ID" '.ArchiveList = [.ArchiveList[] | select(.ArchiveId != $id)]' "$ACTIVE_INVENTORY" > "$TEMP_JSON"
-              mv "$TEMP_JSON" "$ACTIVE_INVENTORY"
+              # Add ID to batch deletion list
+              DELETED_IDS+=("$ID")
 
-              # Save progress
-              echo "$SUCCESS_COUNT" > "$PROGRESS_FILE"
+              # Update JSON every 500 archives (for resume capability)
+              if (( SUCCESS_COUNT % 500 == 0 )); then
+                TEMP_JSON=$(mktemp)
+                # Convert bash array to JSON array for jq
+                DELETED_IDS_JSON=$(printf '%s\n' "${DELETED_IDS[@]}" | jq -R . | jq -s .)
+                # Remove all deleted IDs at once
+                jq --argjson ids "$DELETED_IDS_JSON" \
+                  '.ArchiveList = [.ArchiveList[] | select(.ArchiveId as $id | $ids | index($id) | not)]' \
+                  "$ACTIVE_INVENTORY" > "$TEMP_JSON"
+                mv "$TEMP_JSON" "$ACTIVE_INVENTORY"
+                echo "$SUCCESS_COUNT" > "$PROGRESS_FILE"
+                DELETED_IDS=()
+              fi
             else
               RETRY_COUNT=$((RETRY_COUNT + 1))
               if [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; then
-                log "WARN" "Error on archive ${ID:0:20}..., attempt $((RETRY_COUNT + 1))/$MAX_RETRIES"
+                log "WARN" "Error on archive ${ID:0:20}..., attempt $((RETRY_COUNT + 1))/$MAX_RETRIES: $ERROR_MSG"
                 echo "   ⚠️  Error on archive ${ID:0:20}..., attempt $((RETRY_COUNT + 1))/$MAX_RETRIES"
-                sleep 2
+                echo "   Error: $ERROR_MSG"
+                sleep 0.5
               fi
             fi
           done
 
           if [[ "$SUCCESS" == false ]]; then
-            log "ERROR" "Definitive deletion failure: ${ID:0:40}"
+            log "ERROR" "Definitive deletion failure: ${ID:0:40} - Error: $ERROR_MSG"
             echo "   ❌ Definitive failure: ${ID:0:20}..."
+            echo "   Error: $ERROR_MSG"
             FAILED_COUNT=$((FAILED_COUNT + 1))
           fi
 
           # Pause to avoid rate limiting
           #sleep "$DELAY_BETWEEN_DELETES"
         done < <(jq -r '.ArchiveList[].ArchiveId' "$ACTIVE_INVENTORY")
+
+        # Update remaining IDs (last batch < 500)
+        if (( ${#DELETED_IDS[@]} > 0 )); then
+          TEMP_JSON=$(mktemp)
+          # Convert bash array to JSON array for jq
+          DELETED_IDS_JSON=$(printf '%s\n' "${DELETED_IDS[@]}" | jq -R . | jq -s .)
+          # Remove all deleted IDs at once
+          jq --argjson ids "$DELETED_IDS_JSON" \
+            '.ArchiveList = [.ArchiveList[] | select(.ArchiveId as $id | $ids | index($id) | not)]' \
+            "$ACTIVE_INVENTORY" > "$TEMP_JSON"
+          mv "$TEMP_JSON" "$ACTIVE_INVENTORY"
+          echo "$SUCCESS_COUNT" > "$PROGRESS_FILE"
+        fi
 
         log "INFO" "Deletion completed for $VAULT : $SUCCESS_COUNT successful, $FAILED_COUNT failed"
         echo "✅ Deletion completed: $SUCCESS_COUNT successful, $FAILED_COUNT failed"
@@ -279,9 +306,9 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
     echo "   ⚠️  Note: Deletion may fail if vault was modified less than 24h ago"
 
     if aws glacier delete-vault \
-      --account-id "$ACCOUNT_ID" \
-      --vault-name "$VAULT" \
-      --region "$REGION" 2>/dev/null; then
+      --account-id="$ACCOUNT_ID" \
+      --vault-name="$VAULT" \
+      --region="$REGION" 2>/dev/null; then
       log "INFO" "Vault successfully deleted: $VAULT"
       echo "✅ Vault deleted: $VAULT"
       VAULTS_DELETED=$((VAULTS_DELETED + 1))

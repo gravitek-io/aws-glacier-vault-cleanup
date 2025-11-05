@@ -9,15 +9,25 @@ DATA_DIR="$ROOT_DIR/data"
 ACCOUNT_ID="-"               # Your account ID (or "-")
 REGION="eu-west-1"           # Adapt to your region
 GLACIER_JSON="$DATA_DIR/glacier.json"
-JOBS_DIR="$DATA_DIR"
+JOBS_DIR="$DATA_DIR/job_data"
 
 echo "🚀 Initialization of Glacier inventory jobs"
 echo "================================================"
 
-# Check that glacier.json exists
+# Check that glacier.json exists, if not generate it
 if [[ ! -f "$GLACIER_JSON" ]]; then
-  echo "❌ File .* not found"
-  exit 1
+  echo "📥 glacier.json not found, fetching vault list from AWS..."
+  mkdir -p "$DATA_DIR" "$JOBS_DIR"
+
+  if aws glacier list-vaults \
+    --account-id="$ACCOUNT_ID" \
+    --region="$REGION" > "$GLACIER_JSON"; then
+    echo "✅ glacier.json generated successfully"
+  else
+    echo "❌ Failed to fetch vault list from AWS"
+    echo "   Make sure AWS CLI is configured with valid credentials"
+    exit 1
+  fi
 fi
 
 # Extract vault list
@@ -40,10 +50,10 @@ for VAULT in $VAULTS; do
   # Lancer le job inventory
   echo "🔄 Launching job inventory..."
   JOB_OUTPUT=$(aws glacier initiate-job \
-    --account-id "$ACCOUNT_ID" \
-    --vault-name "$VAULT" \
-    --region "$REGION" \
-    --job-parameters '{"Type":"inventory-retrieval"}')
+    --account-id="$ACCOUNT_ID" \
+    --vault-name="$VAULT" \
+    --region="$REGION" \
+    --job-parameters='{"Type":"inventory-retrieval"}')
 
   # Extract job ID and location
   JOB_ID=$(echo "$JOB_OUTPUT" | jq -r '.jobId')
