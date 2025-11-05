@@ -49,6 +49,8 @@ docker --version
 # http://localhost:8080
 ```
 
+![Dashboard](img/aws-glacier-vault-cleanup.png)
+
 That's it! 🎉
 
 ### Using with Docker
