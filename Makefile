@@ -1,4 +1,4 @@
-.PHONY: help build start stop restart logs shell clean status exec init check delete-dry delete vaults-only
+.PHONY: help build start stop restart logs shell clean clean-logs status exec init check delete-dry delete vaults-only
 
 help:
 	@echo "🐳 Glacier Manager - Available Commands"
@@ -12,6 +12,7 @@ help:
 	@echo "  make shell         - Open shell in container"
 	@echo "  make status        - Show container status"
 	@echo "  make clean         - Remove container and image"
+	@echo "  make clean-logs    - Delete all data files (logs, jobs, inventories, glacier.json)"
 	@echo ""
 	@echo "Glacier Operations:"
 	@echo "  make init          - Launch inventory jobs"
@@ -55,6 +56,14 @@ clean:
 	@cd docker && docker compose down -v
 	@docker rmi glacier-manager:latest 2>/dev/null || true
 	@echo "✅ Cleaning completed"
+
+clean-logs:
+	@echo "🧹 Deleting log files, jobs, inventories and glacier.json..."
+	@rm -rf data/glacier_logs/*
+	@rm -f data/job_*.json
+	@rm -rf data/glacier_inventory/*
+	@rm -f data/glacier.json
+	@echo "✅ All data files deleted"
 
 exec:
 	@cd docker && docker compose exec glacier-dashboard $(CMD)
