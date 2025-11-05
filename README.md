@@ -2,6 +2,19 @@
 
 Scripts to automate the complete deletion of AWS Glacier vaults and their archives.
 
+## 🎯 Why This Tool?
+
+**Important:** [AWS announced](https://docs.aws.amazon.com/amazonglacier/latest/dev/vault-lock.html) that the standalone Amazon Glacier service (vault-based with 2012 REST API) will stop accepting new customers starting **December 15, 2025**. AWS recommends migrating to S3 Glacier storage classes (Instant Retrieval, Flexible Retrieval, or Deep Archive).
+
+This tool is essential if you need to:
+
+- **🔄 Migrate to S3 Glacier**: Clean up your old Glacier vaults before migrating data to S3 Glacier storage classes
+- **🧹 Decommission**: Permanently delete archived data you no longer need before the service transition
+- **💰 Save costs**: Remove unused archives to stop paying storage fees
+- **🔒 Compliance**: Ensure complete data deletion from legacy Glacier vaults for security or regulatory requirements
+
+The manual process of deleting thousands of archives one by one is tedious and error-prone. This automated solution handles the entire workflow: inventory retrieval, archive deletion with retry logic, and vault cleanup.
+
 ## 📁 Project Files
 
 ### Main Scripts
@@ -172,6 +185,7 @@ make stop
 | `make shell` | Open shell in container |
 | `make status` | Display container status |
 | `make clean` | Remove container and image |
+| `make clean-logs` | Delete all data files (logs, jobs, inventories, glacier.json) |
 | `make init` | Launch inventory jobs |
 | `make check` | Check job status |
 | `make delete-dry` | Deletion in dry-run mode |
@@ -647,13 +661,26 @@ You can adjust parameters in the script:
 
 ### I want to manually clean up after tests
 
+**Easy way (recommended):**
 ```bash
-# Clean working inventories
+# Clean all data files at once
+make clean-logs
+```
+
+**Manual cleanup:**
+```bash
+# Clean working inventories only
 rm -f data/glacier_inventory/*.working.json data/glacier_inventory/.progress_*
 
 # Clean all logs
-rm -rf data/glacier_logs/
+rm -rf data/glacier_logs/*
 
 # Clean all job files
-rm -rf data/job_data/
+rm -f data/job_*.json
+
+# Clean inventories
+rm -rf data/glacier_inventory/*
+
+# Clean vault configuration
+rm -f data/glacier.json
 ```

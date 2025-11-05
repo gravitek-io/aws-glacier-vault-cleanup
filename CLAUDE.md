@@ -157,6 +157,26 @@ fi
 
 **Impact**: Users now see progress updates 4x more frequently during deletion operations
 
+### 8. Data Cleanup Command
+
+**Objective**: Provide convenient way to clean all data files and start fresh
+
+**Features Implemented**:
+- New `make clean-logs` command that removes all data files
+- Deletes logs (`data/glacier_logs/*`)
+- Deletes job files (`data/job_*.json`)
+- Deletes inventories (`data/glacier_inventory/*`)
+- Deletes vault configuration (`data/glacier.json`)
+- Clear confirmation message after cleanup
+
+**File Modified**: `Makefile:60-66`
+
+**Use Cases**:
+- Reset project to clean state
+- Remove sensitive vault data before sharing
+- Clean up after testing
+- Free disk space from accumulated logs
+
 ## Key Technical Decisions
 
 ### Design System
@@ -284,7 +304,7 @@ Potential enhancements that could be considered:
 | `scripts/docker-shell.sh` | Path updates, translation |
 | `docker/Dockerfile` | Updated paths for new structure |
 | `docker/docker-compose.yml` | Updated build context and volumes |
-| `Makefile` | Updated paths and commands, translation |
+| `Makefile` | Updated paths and commands, translation, clean-logs command |
 
 ## References
 
@@ -294,5 +314,5 @@ Potential enhancements that could be considered:
 
 ---
 
-**Last Updated**: November 2, 2025
+**Last Updated**: November 5, 2025
 **Claude Model**: Sonnet 4.5 (claude-sonnet-4-5-20250929)
