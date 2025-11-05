@@ -10,20 +10,20 @@ services:
       - "8080:8080"
 
     volumes:
-      # Credentials AWS (lecture seule)
+      # AWS credentials (read-only)
       - ~/.aws:/home/glacier/.aws:ro
 
-      # Monter le répertoire data pour synchroniser tous les fichiers
-      # (job_*.json, inventaires, logs, etc.)
+      # Mount data directory to sync all files
+      # (job_*.json, inventories, logs, etc.)
       - ../data:/home/glacier/app/data:rw
 
     working_dir: /home/glacier/app
 
     environment:
-      # Configuration AWS (optionnel, peut aussi utiliser les credentials du volume)
+      # AWS configuration (optional, can also use credentials from volume)
       - AWS_REGION=eu-west-1
       - AWS_DEFAULT_REGION=eu-west-1
-      # Décommenter si vous voulez utiliser des variables d'environnement pour les credentials
+      # Uncomment if you want to use environment variables for credentials
       # - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       # - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
 
@@ -36,7 +36,7 @@ services:
       retries: 3
       start_period: 10s
 
-    # Limites de ressources (optionnel)
+    # Resource limits (optional)
     deploy:
       resources:
         limits:
@@ -53,7 +53,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
-# Créer un réseau dédié (optionnel)
+# Create dedicated network (optional)
 networks:
   default:
     name: glacier-network

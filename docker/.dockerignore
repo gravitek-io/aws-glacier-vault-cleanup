@@ -3,7 +3,7 @@
 .gitignore
 .gitattributes
 
-# Logs et données générées
+# Logs and generated data
 glacier_logs/
 glacier_inventory/
 job_*.json
@@ -14,7 +14,7 @@ Dockerfile
 docker-compose.yml
 .dockerignore
 
-# Credentials AWS (ne jamais inclure dans l'image)
+# AWS credentials (never include in image)
 .aws/
 credentials
 config
@@ -23,7 +23,7 @@ config
 README.md
 *.md
 
-# Fichiers temporaires
+# Temporary files
 *.tmp
 *.bak
 *.swp
@@ -45,6 +45,6 @@ venv/
 .idea/
 *.sublime-*
 
-# Données de test
+# Test data
 test/
 tests/
