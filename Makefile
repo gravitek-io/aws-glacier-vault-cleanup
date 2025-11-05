@@ -1,20 +1,29 @@
-.PHONY: help build start stop restart logs shell clean status exec
+.PHONY: help build start stop restart logs shell clean status exec init check delete-dry delete vaults-only
 
 help:
 	@echo "🐳 Glacier Manager - Available Commands"
 	@echo ""
-	@echo "  make build      - Build Docker image"
-	@echo "  make start      - Start container"
-	@echo "  make stop       - Stop container"
-	@echo "  make restart    - Restart container"
-	@echo "  make logs       - Show real-time logs"
-	@echo "  make shell      - Open shell in container"
-	@echo "  make status     - Show container status"
-	@echo "  make clean      - Remove container and image"
+	@echo "Container Management:"
+	@echo "  make build         - Build Docker image"
+	@echo "  make start         - Start container"
+	@echo "  make stop          - Stop container"
+	@echo "  make restart       - Restart container"
+	@echo "  make logs          - Show real-time logs"
+	@echo "  make shell         - Open shell in container"
+	@echo "  make status        - Show container status"
+	@echo "  make clean         - Remove container and image"
 	@echo ""
-	@echo "  make exec CMD='./check_glacier_jobs.sh'  - Execute a command"
+	@echo "Glacier Operations:"
+	@echo "  make init          - Launch inventory jobs"
+	@echo "  make check         - Check job status"
+	@echo "  make delete-dry    - Deletion in dry-run mode"
+	@echo "  make delete        - Real deletion (asks for confirmation)"
+	@echo "  make vaults-only   - Delete only empty vaults"
 	@echo ""
-	@echo "Dashboard : http://localhost:8080"
+	@echo "Advanced:"
+	@echo "  make exec CMD='...' - Execute custom command in container"
+	@echo ""
+	@echo "Dashboard: http://localhost:8080"
 
 build:
 	@echo "🔨 Building Docker image..."
@@ -50,13 +59,13 @@ clean:
 exec:
 	@cd docker && docker compose exec glacier-dashboard $(CMD)
 
-# Raccourcis pour les scripts communs
+# Shortcuts for common scripts
 init:
-	@echo "🚀 Lancement des jobs d'inventaire..."
+	@echo "🚀 Launching inventory jobs..."
 	@cd docker && docker compose exec glacier-dashboard ./scripts/init_glacier_inventory.sh
 
 check:
-	@echo "🔍 Vérification de l'état des jobs..."
+	@echo "🔍 Checking job status..."
 	@cd docker && docker compose exec glacier-dashboard ./scripts/check_glacier_jobs.sh
 
 delete-dry:
