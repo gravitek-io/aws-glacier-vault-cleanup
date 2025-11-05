@@ -358,9 +358,9 @@ Once all jobs are completed:
 ✅ Job completed successfully
 📥 Downloading inventory...
 ✅ Inventory saved: ./glacier_inventory/inventory_my_vault_1.json
-🧨 64 archives found in vault
+🧨 1234 archives found in vault
 🧹 Real deletion of archives...
-✅ Deletion completed: 64 successful, 0 failed
+✅ Deletion completed: 1234 successful, 0 failed
 🧹 Deleting empty vault: my_vault_1
    ⚠️  Note: Deletion may fail if vault was modified less than 24h ago
 ❌ Failed to delete vault my_vault_1
@@ -435,12 +435,12 @@ According to `glacier.json`, here are the vaults to process:
 
 | Vault | Archives | Size | Last inventory |
 |-------|----------|------|----------------|
-| my_vault_1 | 64 | 10 GB | 2025-10-24 |
-| my_vault_1_mapping | 0 | 0 B | 2025-10-24 |
-| my_vault_2 | 10,000 | 100 GB | 2025-10-24 |
-| my_vault_2_mapping | 1 | 50 MB | 2023-12-21 |
-| my_vault_3 | 5,000 | 50 GB | 2023-12-22 |
-| my_vault_3_mapping | 1 | 20 MB | 2023-12-26 |
+| my_vault_1 | 1,234 | 10 GB | 2025-01-15 |
+| my_vault_1_mapping | 0 | 0 B | 2025-01-15 |
+| my_vault_2 | 10,000 | 100 GB | 2025-01-15 |
+| my_vault_2_mapping | 5 | 50 MB | 2025-01-10 |
+| my_vault_3 | 5,000 | 50 GB | 2025-01-10 |
+| my_vault_3_mapping | 2 | 20 MB | 2025-01-08 |
 
 **Total: ~160 GB of data**
 
@@ -614,7 +614,7 @@ The script validates the JSON structure of inventories before processing them, a
 - Vaults must be completely empty before they can be deleted
 - A vault can only be deleted 24h after the last write operation
 - Glacier inventories are updated approximately every 24h
-- Deleting ~355k archives can take several hours (about 1-2h with anti-throttling pauses)
+- Deleting ~10k archives can take 1-2 hours (with anti-throttling pauses)
 - **The script can be interrupted at any time**: progress is saved automatically
 - Logs are kept in `./glacier_logs/` for audit and debugging
 - Downloaded inventories are kept in `./glacier_inventory/` and reused when running `--vaults-only`
