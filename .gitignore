@@ -3,6 +3,9 @@
 # Data directory (contains AWS data, logs, inventories)
 data/
 !data/.gitkeep
+!data/glacier_inventory/.gitkeep
+!data/glacier_logs/.gitkeep
+!data/job_data/.gitkeep
 
 # Python
 __pycache__/
@@ -25,7 +28,8 @@ credentials
 
 # Logs
 *.log
-glacier_logs/
+data/glacier_logs/*
+!data/glacier_logs/.gitkeep
 *.log.*
 
 # Temporary files
@@ -47,9 +51,10 @@ Thumbs.db
 docker/volumes/
 
 # Inventory and job data
-glacier_inventory/
-job_*.json
-!job_example.json
+data/glacier_inventory/*
+!data/glacier_inventory/.gitkeep
+data/job_data/*
+!data/job_data/.gitkeep
 
 # Working files
 *.working.json
