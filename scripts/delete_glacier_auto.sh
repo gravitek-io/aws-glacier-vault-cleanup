@@ -12,7 +12,8 @@ JOBS_DIR="$DATA_DIR/job_data"         # Folder containing job*.json
 TMP_DIR="$DATA_DIR/glacier_inventory"
 LOG_DIR="$DATA_DIR/glacier_logs"
 DELAY_BETWEEN_DELETES=0.2    # Delay in seconds to avoid rate limiting (currently disabled)
-MAX_RETRIES=1                # Number of retries in case of error (reduced for speed)
+MAX_RETRIES=3                # Number of retries in case of error (increased for network issues)
+RETRY_DELAY=2                # Initial delay in seconds between retries (exponential backoff)
 
 mkdir -p "$TMP_DIR" "$LOG_DIR"
 
@@ -28,6 +29,24 @@ log() {
   echo "[$timestamp] [$level] $message" | tee -a "$LOG_FILE"
 }
 
+# Check network connectivity
+check_network() {
+  local max_attempts=3
+  local attempt=1
+
+  while [[ $attempt -le $max_attempts ]]; do
+    if curl -s --max-time 5 "https://glacier.${REGION}.amazonaws.com" > /dev/null 2>&1; then
+      return 0
+    fi
+    log "WARN" "Network check failed (attempt $attempt/$max_attempts)"
+    sleep 2
+    attempt=$((attempt + 1))
+  done
+
+  log "ERROR" "Network connectivity lost after $max_attempts attempts"
+  return 1
+}
+
 # Function to handle clean interruption (Ctrl+C)
 cleanup_on_exit() {
   log "WARN" "Script interrupted by user (Ctrl+C)"
@@ -37,8 +56,23 @@ cleanup_on_exit() {
 
 trap cleanup_on_exit SIGINT SIGTERM
 
+# Detect if running on macOS and caffeinate is available
+USE_CAFFEINATE=false
+if [[ "$(uname)" == "Darwin" ]] && command -v caffeinate &> /dev/null; then
+  USE_CAFFEINATE=true
+fi
+
+# Self-restart with caffeinate if not already running under it
+if [[ "$USE_CAFFEINATE" == true ]] && [[ -z "${CAFFEINATED:-}" ]]; then
+  log "INFO" "Restarting with caffeinate to prevent system sleep..."
+  echo "☕ Preventing system sleep with caffeinate..."
+  export CAFFEINATED=1
+  exec caffeinate -i "$0" "$@"
+fi
+
 log "INFO" "=== Starting Glacier deletion script ==="
 log "INFO" "Log file: $LOG_FILE"
+[[ -n "${CAFFEINATED:-}" ]] && log "INFO" "Running with caffeinate (sleep prevention enabled)"
 
 DRY_RUN=false
 VAULTS_ONLY=false
@@ -216,7 +250,7 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
             fi
           fi
 
-          # Retries with retry
+          # Retries with exponential backoff
           RETRY_COUNT=0
           SUCCESS=false
 
@@ -250,10 +284,23 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
             else
               RETRY_COUNT=$((RETRY_COUNT + 1))
               if [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; then
-                log "WARN" "Error on archive ${ID:0:20}..., attempt $((RETRY_COUNT + 1))/$MAX_RETRIES: $ERROR_MSG"
-                echo "   ⚠️  Error on archive ${ID:0:20}..., attempt $((RETRY_COUNT + 1))/$MAX_RETRIES"
+                # Check if it's a network error
+                if echo "$ERROR_MSG" | grep -qiE "(connection|network|timeout|could not connect|endpoint)"; then
+                  log "WARN" "Network error detected on archive ${ID:0:20}..., checking connectivity..."
+                  echo "   ⚠️  Network error detected, checking connectivity..."
+                  if ! check_network; then
+                    log "ERROR" "Network connectivity lost, stopping script"
+                    echo "   ❌ Network connectivity lost. Fix network and rerun script to resume."
+                    exit 254
+                  fi
+                fi
+
+                # Exponential backoff: 2s, 4s, 8s, etc.
+                WAIT_TIME=$((RETRY_DELAY * (2 ** (RETRY_COUNT - 1))))
+                log "WARN" "Error on archive ${ID:0:20}..., attempt $((RETRY_COUNT + 1))/$MAX_RETRIES (waiting ${WAIT_TIME}s): $ERROR_MSG"
+                echo "   ⚠️  Error on archive ${ID:0:20}..., attempt $((RETRY_COUNT + 1))/$MAX_RETRIES (waiting ${WAIT_TIME}s)"
                 echo "   Error: $ERROR_MSG"
-                sleep 0.5
+                sleep "$WAIT_TIME"
               fi
             fi
           done
