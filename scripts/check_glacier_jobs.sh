@@ -40,7 +40,8 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
     --account-id="$ACCOUNT_ID" \
     --vault-name="$VAULT" \
     --job-id="$JOB_ID" \
-    --region="$REGION")
+    --region="$REGION" \
+    --no-cli-pager)
 
   COMPLETED=$(echo "$JOB_STATUS" | jq -r '.Completed')
   STATUS_CODE=$(echo "$JOB_STATUS" | jq -r '.StatusCode')

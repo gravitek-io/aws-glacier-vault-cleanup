@@ -138,7 +138,8 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
       --account-id="$ACCOUNT_ID" \
       --vault-name="$VAULT" \
       --job-id="$JOB_ID" \
-      --region="$REGION")
+      --region="$REGION" \
+      --no-cli-pager)
 
     COMPLETED=$(echo "$JOB_STATUS" | jq -r '.Completed')
     STATUS_CODE=$(echo "$JOB_STATUS" | jq -r '.StatusCode')
@@ -160,7 +161,8 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
       --vault-name="$VAULT" \
       --job-id="$JOB_ID" \
       "$INVENTORY_FILE" \
-      --region="$REGION"; then
+      --region="$REGION" \
+      --no-cli-pager; then
       echo "✅ Inventory saved: $INVENTORY_FILE"
     else
       echo "❌ Failed to download inventory"
@@ -259,7 +261,8 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
               --account-id="$ACCOUNT_ID" \
               --vault-name="$VAULT" \
               --region="$REGION" \
-              --archive-id="$ID" 2>&1)
+              --archive-id="$ID" \
+              --no-cli-pager 2>&1)
             EXIT_CODE=$?
             if [[ $EXIT_CODE -eq 0 ]]; then
               SUCCESS=true
@@ -360,7 +363,8 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
     if aws glacier delete-vault \
       --account-id="$ACCOUNT_ID" \
       --vault-name="$VAULT" \
-      --region="$REGION" 2>/dev/null; then
+      --region="$REGION" \
+      --no-cli-pager 2>/dev/null; then
       log "INFO" "Vault successfully deleted: $VAULT"
       echo "✅ Vault deleted: $VAULT"
       VAULTS_DELETED=$((VAULTS_DELETED + 1))

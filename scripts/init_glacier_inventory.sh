@@ -21,7 +21,8 @@ if [[ ! -f "$GLACIER_JSON" ]]; then
 
   if aws glacier list-vaults \
     --account-id="$ACCOUNT_ID" \
-    --region="$REGION" > "$GLACIER_JSON"; then
+    --region="$REGION" \
+    --no-cli-pager > "$GLACIER_JSON"; then
     echo "✅ glacier.json generated successfully"
   else
     echo "❌ Failed to fetch vault list from AWS"
@@ -53,7 +54,8 @@ for VAULT in $VAULTS; do
     --account-id="$ACCOUNT_ID" \
     --vault-name="$VAULT" \
     --region="$REGION" \
-    --job-parameters='{"Type":"inventory-retrieval"}')
+    --job-parameters='{"Type":"inventory-retrieval"}' \
+    --no-cli-pager)
 
   # Extract job ID and location
   JOB_ID=$(echo "$JOB_OUTPUT" | jq -r '.jobId')
