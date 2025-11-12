@@ -193,7 +193,12 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
         START_TIME=$(date +%s)
         DELETED_IDS=()
 
-        while IFS= read -r ID; do
+        # Read all archive IDs into memory first (avoid race condition when updating file during read)
+        log "INFO" "Loading archive IDs into memory..."
+        mapfile -t ARCHIVE_IDS < <(jq -r '.ArchiveList[].ArchiveId' "$ACTIVE_INVENTORY")
+        log "INFO" "Loaded ${#ARCHIVE_IDS[@]} archive IDs"
+
+        for ID in "${ARCHIVE_IDS[@]}"; do
           CURRENT=$((CURRENT + 1))
           [[ -z "$ID" || "$ID" == "null" ]] && continue
 
@@ -262,7 +267,7 @@ for JOB_FILE in "$JOBS_DIR"/job*.json; do
 
           # Pause to avoid rate limiting
           #sleep "$DELAY_BETWEEN_DELETES"
-        done < <(jq -r '.ArchiveList[].ArchiveId' "$ACTIVE_INVENTORY")
+        done
 
         # Update remaining IDs (last batch < 500)
         if (( ${#DELETED_IDS[@]} > 0 )); then
